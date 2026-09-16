@@ -89,4 +89,21 @@ Source: emulator README "What it does not do". These are documented behavior, no
 
 ## Findings log
 
-_No provider findings yet._
+### Explicit isolation level rejected (`0A000: Unsupported isolation level: READ COMMITTED`)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Type:** expected behaviour (validates DSQL semantics), surfaced by our first integration run
+- **Impact on us:** Npgsql maps `IsolationLevel.Unspecified` to an explicit `READ COMMITTED`;
+  every `BeginTransaction` failed.
+- **Fix (ours):** `DsqlRelationalConnection` forces `IsolationLevel.RepeatableRead`.
+- **Upstream:** none; emulator is correct.
+
+### One DDL per transaction enforced (`0A000: a transaction can include only one DDL statement`)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Type:** expected behaviour (validates DSQL semantics)
+- **Impact on us:** EF's `Migrator` opens one transaction for the whole migration, so applying a
+  multi-statement migration failed.
+- **Fix (ours):** `DsqlMigrationCommandExecutor` commits and drops the migrator's transaction and
+  lets each statement autocommit.
+- **Upstream:** none; emulator is correct.

@@ -7,8 +7,9 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal;
 namespace Amazon.AuroraDsql.EntityFrameworkCore.Storage;
 
 /// <summary>
-/// Connection that never requests a PostgreSQL isolation level: Aurora DSQL pins the isolation
-/// level to <c>Repeatable Read</c> and ignores (or rejects) <c>SET TRANSACTION ISOLATION LEVEL</c>.
+/// Connection that always requests Aurora DSQL's fixed <c>Repeatable Read</c> isolation level.
+/// Npgsql maps <see cref="IsolationLevel.Unspecified" /> to an explicit <c>READ COMMITTED</c>,
+/// which DSQL rejects, so any requested level is overridden.
 /// </summary>
 internal sealed class DsqlRelationalConnection : NpgsqlRelationalConnection
 {
@@ -21,10 +22,10 @@ internal sealed class DsqlRelationalConnection : NpgsqlRelationalConnection
     }
 
     protected override DbTransaction ConnectionBeginTransaction(IsolationLevel isolationLevel)
-        => base.ConnectionBeginTransaction(IsolationLevel.Unspecified);
+        => base.ConnectionBeginTransaction(IsolationLevel.RepeatableRead);
 
     protected override ValueTask<DbTransaction> ConnectionBeginTransactionAsync(
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken)
-        => base.ConnectionBeginTransactionAsync(IsolationLevel.Unspecified, cancellationToken);
+        => base.ConnectionBeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 }

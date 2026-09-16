@@ -162,16 +162,18 @@ conflict against a live/emulated conflict is verified in Phase 6.
 
 ## Phase 6 — Testing
 
-- [ ] Unit tests: SQL generation snapshots for all overridden operations (no database).
-- [ ] Integration tests against the
+- [x] Unit tests: SQL generation snapshots for all overridden operations (no database).
+- [x] Integration tests against the
       [dsql-emulator](https://github.com/Dreamescaper/dsql-emulator) via Testcontainers:
-      migrations, CRUD, navigation properties, batch `SaveChanges`, explicit transactions,
-      transaction rules (1 DDL/tx, DDL/DML split, 3,000-row cap), `jsonb` collections,
-      `CREATE INDEX ASYNC`, FK `NOT VALID` + `VALIDATE CONSTRAINT`, OCC retry.
+      connect, migrations (history table + `CREATE TABLE` + `CREATE INDEX ASYNC`, one DDL per
+      transaction), CRUD, `jsonb` collections (round-trip + containment query), explicit
+      transactions without savepoints, and `ExecuteInTransactionAsync`.
+- [ ] Remaining integration coverage: navigation properties, FK `NOT VALID` + `VALIDATE CONSTRAINT`
+      against the emulator, induced OCC conflict retry, 3,000-row cap, batch `SaveChanges` limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
 - [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
-- [ ] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
+- [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.
 

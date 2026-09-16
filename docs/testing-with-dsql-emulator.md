@@ -21,12 +21,12 @@ SQL, almost all correctness can be asserted as strings without a database.
 
 ## Running the emulator
 
-Image: `ghcr.io/dreamescaper/dsql-emulator:latest` (pin a version tag for reproducibility).
+Image: `ghcr.io/dreamescaper/dsql-emulator:0.1.1` (pinned in the fixture for reproducibility).
 Single container serves PostgreSQL (internal `5433`) and the proxy on `5432`. Readiness is
 signalled by the log line `proxy listening`.
 
 ```bash
-docker run --rm -p 5432:5432 ghcr.io/dreamescaper/dsql-emulator:latest
+docker run --rm -p 5432:5432 ghcr.io/dreamescaper/dsql-emulator:0.1.1
 ```
 
 ## Testcontainers fixture
@@ -39,7 +39,7 @@ using Npgsql;
 public sealed class DsqlEmulatorFixture : IAsyncLifetime
 {
     private readonly IContainer _container = new ContainerBuilder()
-        .WithImage("ghcr.io/dreamescaper/dsql-emulator:0.1.0") // pin a version
+        .WithImage("ghcr.io/dreamescaper/dsql-emulator:0.1.1") // pin a version
         .WithPortBinding(5432, assignRandomHostPort: true)
         .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("proxy listening"))
         .Build();
@@ -93,6 +93,21 @@ terminates TLS, so keep TLS on to match DSQL.
   deterministic conflict injection for retry-loop tests. *Confirm the exact injection mechanism
   and document it here when wiring Phase 5.*
 - **Types** — the documented supported set, identity/sequence `CACHE` requirements, enums refused.
+
+## Findings from building the fixture
+
+Two emulator behaviours shaped the provider (both are correct DSQL semantics, not emulator bugs):
+
+1. **Explicit isolation levels are rejected.** Npgsql maps `IsolationLevel.Unspecified` to an
+   explicit `READ COMMITTED`, which DSQL refuses (`0A000: Unsupported isolation level`). The
+   provider forces `RepeatableRead`, DSQL's fixed level.
+2. **One DDL per transaction is enforced.** EF's `Migrator` opens a single transaction around the
+   whole migration; the provider's `IMigrationCommandExecutor` commits and drops it, then lets each
+   statement autocommit (`0A000: a transaction can include only one DDL statement` otherwise).
+
+Also note: EF retrying execution strategies disallow `SaveChanges` inside a user-initiated
+transaction, so integration tests wrap manual transactions in
+`Database.CreateExecutionStrategy()` (or use `ExecuteInTransactionAsync`).
 
 ## Deterministic OCC tests
 

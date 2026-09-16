@@ -51,6 +51,21 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
         => await ExecuteAsync(migrationCommands, connection, executionState, cancellationToken)
             .ConfigureAwait(false);
 
+    /// <summary>
+    /// EF's <c>Migrator</c> opens one transaction around the whole migration. DSQL allows only one
+    /// DDL statement per transaction, so commit and drop that transaction and let each command
+    /// autocommit. The migrator's final <c>Transaction?.Commit()</c> is a no-op on the null value.
+    /// </summary>
+    private static void ReleaseAmbientTransaction(MigrationExecutionState executionState)
+    {
+        if (executionState.Transaction is not null)
+        {
+            executionState.Transaction.Commit();
+            executionState.Transaction.Dispose();
+            executionState.Transaction = null;
+        }
+    }
+
     private static int Execute(
         IReadOnlyList<MigrationCommand> commands,
         IRelationalConnection connection,
@@ -58,6 +73,7 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
     {
         var result = 0;
         var connectionOpened = connection.Open();
+        ReleaseAmbientTransaction(executionState);
 
         try
         {
@@ -87,6 +103,7 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
     {
         var result = 0;
         var connectionOpened = await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        ReleaseAmbientTransaction(executionState);
 
         try
         {

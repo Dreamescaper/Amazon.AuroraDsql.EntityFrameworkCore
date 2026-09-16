@@ -193,8 +193,9 @@ For that branch to engage, the composed mapping must satisfy:
 
 ## 7. Transactions and concurrency
 
-- DSQL has a single, fixed isolation level. Ignore/reject requested isolation levels other than
-  the DSQL default (Repeatable Read) instead of sending `SET TRANSACTION ISOLATION LEVEL`.
+- DSQL has a single, fixed isolation level. Force `IsolationLevel.RepeatableRead` (Npgsql maps
+  `Unspecified` to an explicit `READ COMMITTED`, which DSQL rejects) instead of sending arbitrary
+  `SET TRANSACTION ISOLATION LEVEL`.
 - Implement `IExecutionStrategy` that retries on `SQLSTATE 40001` with exponential backoff and
   jitter. `SaveChanges` inside an explicit transaction is not retried by EF, so provide an
   `ExecuteInTransactionAsync`-style helper that clears tracked state between attempts.
