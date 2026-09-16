@@ -27,6 +27,8 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
     {
         UseIdentityColumns = copyFrom.UseIdentityColumns;
         IdentityCacheSize = copyFrom.IdentityCacheSize;
+        MaxRetryCount = copyFrom.MaxRetryCount;
+        MaxRetryDelay = copyFrom.MaxRetryDelay;
     }
 
     public DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
@@ -35,8 +37,15 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
 
     internal int IdentityCacheSize { get; private init; } = DsqlDbContextOptionsBuilder.DefaultIdentityCacheSize;
 
+    internal int MaxRetryCount { get; private init; } = DsqlDbContextOptionsBuilder.DefaultMaxRetryCount;
+
+    internal TimeSpan MaxRetryDelay { get; private init; } = DsqlDbContextOptionsBuilder.DefaultMaxRetryDelay;
+
     public DsqlOptionsExtension WithIdentityColumns(int cacheSize)
         => new(this) { UseIdentityColumns = true, IdentityCacheSize = cacheSize };
+
+    public DsqlOptionsExtension WithRetry(int maxRetryCount, TimeSpan maxRetryDelay)
+        => new(this) { MaxRetryCount = maxRetryCount, MaxRetryDelay = maxRetryDelay };
 
     public void ApplyServices(IServiceCollection services)
     {
@@ -71,17 +80,25 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
             => $"using AuroraDsql(identityColumns: {Extension.UseIdentityColumns}) ";
 
         public override int GetServiceProviderHashCode()
-            => HashCode.Combine(Extension.UseIdentityColumns, Extension.IdentityCacheSize);
+            => HashCode.Combine(
+                Extension.UseIdentityColumns,
+                Extension.IdentityCacheSize,
+                Extension.MaxRetryCount,
+                Extension.MaxRetryDelay);
 
         public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
             => other is ExtensionInfo otherInfo
                 && Extension.UseIdentityColumns == otherInfo.Extension.UseIdentityColumns
-                && Extension.IdentityCacheSize == otherInfo.Extension.IdentityCacheSize;
+                && Extension.IdentityCacheSize == otherInfo.Extension.IdentityCacheSize
+                && Extension.MaxRetryCount == otherInfo.Extension.MaxRetryCount
+                && Extension.MaxRetryDelay == otherInfo.Extension.MaxRetryDelay;
 
         public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
         {
             debugInfo["AuroraDsql:UseIdentityColumns"] = Extension.UseIdentityColumns.ToString();
             debugInfo["AuroraDsql:IdentityCacheSize"] = Extension.IdentityCacheSize.ToString();
+            debugInfo["AuroraDsql:MaxRetryCount"] = Extension.MaxRetryCount.ToString();
+            debugInfo["AuroraDsql:MaxRetryDelay"] = Extension.MaxRetryDelay.ToString();
         }
     }
 }

@@ -23,6 +23,40 @@ public class DsqlDbContextOptionsBuilder
 
     internal DsqlOptionsExtension Options { get; private set; }
 
+    /// <summary>Default maximum number of OCC retry attempts.</summary>
+    public const int DefaultMaxRetryCount = 6;
+
+    /// <summary>Default maximum delay between OCC retries.</summary>
+    public static readonly TimeSpan DefaultMaxRetryDelay = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Sets the maximum number of OCC retry attempts. Default is <see cref="DefaultMaxRetryCount" />.
+    /// </summary>
+    public DsqlDbContextOptionsBuilder SetMaxRetryCount(int maxRetryCount)
+    {
+        if (maxRetryCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxRetryCount));
+        }
+
+        Options = Options.WithRetry(maxRetryCount, Options.MaxRetryDelay);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the maximum delay between OCC retries. Default is <see cref="DefaultMaxRetryDelay" />.
+    /// </summary>
+    public DsqlDbContextOptionsBuilder SetMaxRetryDelay(TimeSpan maxRetryDelay)
+    {
+        if (maxRetryDelay < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxRetryDelay));
+        }
+
+        Options = Options.WithRetry(Options.MaxRetryCount, maxRetryDelay);
+        return this;
+    }
+
     /// <summary>
     /// Enables identity-column support for <see cref="long" /> primary keys. DSQL accepts a cache
     /// size of either <c>1</c> or at least <see cref="DefaultIdentityCacheSize" />.

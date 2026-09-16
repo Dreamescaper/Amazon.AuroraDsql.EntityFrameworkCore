@@ -1,4 +1,5 @@
 using Amazon.AuroraDsql.EntityFrameworkCore.Infrastructure;
+using Amazon.AuroraDsql.EntityFrameworkCore.Update;
 using Amazon.AuroraDsql.Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -24,9 +25,20 @@ public static class DsqlDbContextOptionsExtensions
         ArgumentNullException.ThrowIfNull(optionsBuilder);
         ArgumentNullException.ThrowIfNull(dataSource);
 
+        var dsqlBuilder = new DsqlDbContextOptionsBuilder(optionsBuilder);
+        dsqlOptionsAction?.Invoke(dsqlBuilder);
+        var extension = dsqlBuilder.Options;
+
         // The data source is passed through as-is so that NpgsqlConnection/NpgsqlCommand identity is preserved.
-        optionsBuilder.UseNpgsql(dataSource);
-        AddDsqlExtension(optionsBuilder, dsqlOptionsAction);
+        optionsBuilder.UseNpgsql(
+            dataSource,
+            npgsql => npgsql.ExecutionStrategy(
+                dependencies => new DsqlExecutionStrategy(
+                    dependencies,
+                    extension.MaxRetryCount,
+                    extension.MaxRetryDelay)));
+
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         return optionsBuilder;
     }
@@ -96,13 +108,4 @@ public static class DsqlDbContextOptionsExtensions
         where TContext : DbContext
         => (DbContextOptionsBuilder<TContext>)UseDsql((DbContextOptionsBuilder)optionsBuilder, serviceProvider, dsqlOptionsAction);
 
-    private static void AddDsqlExtension(
-        DbContextOptionsBuilder optionsBuilder,
-        Action<DsqlDbContextOptionsBuilder>? dsqlOptionsAction)
-    {
-        var dsqlBuilder = new DsqlDbContextOptionsBuilder(optionsBuilder);
-        dsqlOptionsAction?.Invoke(dsqlBuilder);
-
-        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(dsqlBuilder.Options);
-    }
 }

@@ -150,12 +150,15 @@ Phase 6.
 
 ## Phase 5 — OCC retry
 
-- [ ] `DsqlExecutionStrategy` retrying `SQLSTATE 40001` with exponential backoff + jitter.
-- [ ] `ExecuteInTransactionAsync` helper for explicit transactions, clearing tracked state
+- [x] `DsqlExecutionStrategy : NpgsqlRetryingExecutionStrategy` additionally retrying
+      `SQLSTATE 40001` (`PostgresException.SqlState`), with Npgsql's exponential backoff + jitter.
+- [x] `ExecuteInTransactionAsync` helper for explicit transactions, clearing tracked state
       between attempts.
-- [ ] Wire retry options from `DsqlDbContextOptionsBuilder`.
+- [x] Wire retry options from `DsqlDbContextOptionsBuilder` (`SetMaxRetryCount`, `SetMaxRetryDelay`).
 
-**Exit:** an induced serialization conflict is retried transparently and ultimately succeeds.
+**Exit:** unit tests assert the strategy is installed, that `40001` is classified as an OCC
+conflict and other SQLSTATEs are not, and that retry options propagate. Retrying an induced
+conflict against a live/emulated conflict is verified in Phase 6.
 
 ## Phase 6 — Testing
 
