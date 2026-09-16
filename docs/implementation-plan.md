@@ -24,10 +24,17 @@ src/
     Update/                                         # execution strategy
 tests/
   Amazon.AuroraDsql.EntityFrameworkCore.Tests/      # unit tests, SQL string assertions
-  Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests/  # requires a DSQL cluster
+  Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests/  # dsql-emulator via Testcontainers
 examples/
   InventoryApi/                                     # sample app (mirrors the AWS example for parity)
 ```
+
+Decisions referenced by this plan:
+
+- Connector choice: [`connector-amazon-auroradsql-npgsql.md`](connector-amazon-auroradsql-npgsql.md)
+- Comparison with the AWS Labs adapter: [`comparison-aurora-dsql-orms.md`](comparison-aurora-dsql-orms.md)
+- Test setup: [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md)
+
 
 ## Phase 0 — Scaffold
 
@@ -111,14 +118,21 @@ contains no `SET TRANSACTION ISOLATION LEVEL`.
 
 ## Phase 6 — Testing
 
-- [ ] Unit tests: SQL generation snapshots for all overridden operations.
-- [ ] Integration tests against a real DSQL cluster (env: `CLUSTER_ENDPOINT` + AWS creds):
-      CRUD, navigation properties, batch `SaveChanges`, explicit transactions, migrations,
-      OCC retry.
-- [ ] Port/execute a representative subset of the `efcore.pg` functional test suite against
-      DSQL to find gaps.
+- [ ] Unit tests: SQL generation snapshots for all overridden operations (no database).
+- [ ] Integration tests against the
+      [dsql-emulator](https://github.com/Dreamescaper/dsql-emulator) via Testcontainers:
+      migrations, CRUD, navigation properties, batch `SaveChanges`, explicit transactions,
+      transaction rules (1 DDL/tx, DDL/DML split, 3,000-row cap), `jsonb` collections,
+      `CREATE INDEX ASYNC`, FK `NOT VALID` + `VALIDATE CONSTRAINT`, OCC retry.
+- [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
+      drift and cover IAM auth.
+- [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
+- [ ] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
-**Exit:** integration suite green on DSQL; documented list of known-unsupported scenarios.
+See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.
+
+**Exit:** emulator-backed integration suite green in CI; live smoke suite green; documented list
+of known-unsupported scenarios.
 
 ## Phase 7 — Packaging and docs
 
@@ -134,5 +148,7 @@ contains no `SET TRANSACTION ISOLATION LEVEL`.
 | --- | --- |
 | `efcore.pg` internals change between majors | Pin to major; keep overrides small; track `EF1001` usages explicitly |
 | DSQL feature set changes | Centralize assumptions in the compatibility layer; integration tests catch drift |
+| Emulator drifts from real DSQL | Keep a live smoke suite; track differences in [`dsql-emulator-issues.md`](dsql-emulator-issues.md) |
 | 3,000-row limit not enforceable provider-side | Document clearly; surface server error with guidance; revisit if needed |
 | Scaffolding unsupported by DSQL catalogs | Mark database-first as unsupported until verified |
+| Package id collides with the AWS Labs adapter | Resolve the id (or the relationship to that project) before any NuGet release |

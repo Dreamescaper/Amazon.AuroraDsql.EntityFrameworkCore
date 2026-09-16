@@ -200,6 +200,12 @@ Use `Amazon.AuroraDsql.Npgsql`'s `DsqlDataSource` for connections and IAM token 
 underlying `NpgsqlDataSource` is passed **directly** to `UseNpgsql(dataSource, ...)` so that
 connection/command types remain Npgsql-native. No wrapping data source is introduced.
 
+`UseDsql` also accepts a plain `NpgsqlDataSource`, needed for test runs against the local
+emulator and for user-managed authentication. The connector is a convenience, not a hard
+dependency of the provider's behavior. The connector's own OCC retry helpers are **not** used;
+we implement an EF `IExecutionStrategy` instead. Full rationale:
+[`connector-amazon-auroradsql-npgsql.md`](connector-amazon-auroradsql-npgsql.md).
+
 ## 9. Relationship to upstream `efcore.pg`
 
 `efcore.pg` already has a precedent for targeting a PG-compatible system with feature
@@ -230,5 +236,13 @@ package first, with the option to upstream later.
 - Unsupported features: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-unsupported-features.html
 - `efcore.pg`: https://github.com/npgsql/efcore.pg
 - DSQL upstream request: https://github.com/npgsql/efcore.pg/issues/3396
-- Reference adapter (interception approach): https://github.com/awslabs/aurora-dsql-orms
 - Npgsql connector: https://github.com/awslabs/aurora-dsql-connectors/tree/main/dotnet/npgsql
+- DSQL emulator: https://github.com/Dreamescaper/dsql-emulator
+
+## 12. Related documents
+
+- [`comparison-aurora-dsql-orms.md`](comparison-aurora-dsql-orms.md) — comparison with the AWS Labs adapter.
+- [`connector-amazon-auroradsql-npgsql.md`](connector-amazon-auroradsql-npgsql.md) — connector decision.
+- [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) — local integration testing.
+- [`dsql-emulator-issues.md`](dsql-emulator-issues.md) — emulator issues and limitations.
+- [`implementation-plan.md`](implementation-plan.md) — delivery plan.

@@ -35,6 +35,10 @@ DSQL-incompatible SQL**, at SQL-generation time:
 ## Documentation
 
 - [`docs/design.md`](docs/design.md) — architecture, constraints, design decisions, rejected alternatives.
+- [`docs/comparison-aurora-dsql-orms.md`](docs/comparison-aurora-dsql-orms.md) — comparison with the AWS Labs adapter.
+- [`docs/connector-amazon-auroradsql-npgsql.md`](docs/connector-amazon-auroradsql-npgsql.md) — whether to use the AWS Npgsql connector.
+- [`docs/testing-with-dsql-emulator.md`](docs/testing-with-dsql-emulator.md) — local integration testing with Testcontainers.
+- [`docs/dsql-emulator-issues.md`](docs/dsql-emulator-issues.md) — emulator bugs and limitations.
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — phased delivery plan.
 
 ## Non-goals

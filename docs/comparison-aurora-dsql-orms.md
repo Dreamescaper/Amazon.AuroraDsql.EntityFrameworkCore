@@ -1,0 +1,94 @@
+# Comparison: this provider vs. `awslabs/aurora-dsql-orms`
+
+Compares this provider with the AWS Labs EF Core adapter at
+[`awslabs/aurora-dsql-orms/dotnet/ef-core`](https://github.com/awslabs/aurora-dsql-orms/tree/main/dotnet/ef-core)
+(package id `Amazon.AuroraDsql.EntityFrameworkCore`).
+
+Both exist to make EF Core work on Aurora DSQL and both build on
+`Npgsql.EntityFrameworkCore.PostgreSQL` and the `Amazon.AuroraDsql.Npgsql` connector. They differ
+in *where* they correct DSQL incompatibilities.
+
+## At a glance
+
+| Dimension | This provider | aurora-dsql-orms |
+| --- | --- | --- |
+| Core idea | Generate DSQL-correct SQL at SQL-generation time | Intercept the ADO.NET surface and rewrite/suppress SQL |
+| Runtime query SQL | Unchanged; only unsupported **features** are prevented at model time | Every `DbCommand` passes through a regex sniffer |
+| `SAVEPOINT` | Never emitted (`SupportsSavepoints => false`) | Emitted, then matched and suppressed (returns fake success) |
+| `SET TRANSACTION ISOLATION LEVEL` | Never emitted (connection forced to the DSQL isolation) | Emitted, then suppressed |
+| `LOCK TABLE` on history table | History repository replaced | Emitted, then suppressed |
+| `CREATE INDEX ASYNC` | Emitted directly by the migrations SQL generator | `CREATE INDEX` generated, then rewritten by `dsql-lint` |
+| Idempotency (`IF NOT EXISTS`) | Deterministic, per migration operation | Regex over concatenated DDL |
+| External tooling | None | Bundled native `dsql-lint` binary, spawned per migration |
+| Connection/command types | `NpgsqlConnection`/`NpgsqlCommand` preserved | Wrapped in `DbConnection`/`DbCommand` |
+| Migrations | `IMigrationsSqlGenerator` + `IMigrationCommandExecutor` overrides | Whole `Migrator` subclass rebuilding `MigrationCommand`s |
+| OCC retry | `IExecutionStrategy` (EF-idiomatic) | `IExecutionStrategy` (same idea) |
+| UUID / identity keys | Model convention | Model convention (same idea) |
+| Maturity | Design phase | Published, has a sample app and integration tests |
+
+## Fundamental difference: generate vs. post-process
+
+This provider treats DSQL as a provider target and fixes each incompatibility where the SQL is
+produced (see [`design.md`](design.md) §3). `aurora-dsql-orms` treats DSQL as "PostgreSQL minus a
+few commands" and fixes the output afterwards.
+
+Concretely, `aurora-dsql-orms`:
+
+1. Wraps `NpgsqlDataSource` (`DsqlWrappingDataSource`) so every connection is a
+   `DsqlConnectionWrapper : DbConnection` and every command a `DsqlCommandWrapper : DbCommand`.
+2. Suppresses a fixed set of commands by regex on `CommandText` in the command wrapper.
+3. Manually issues `BEGIN` and returns `DsqlTransactionWrapper`.
+4. Subclasses `Migrator`, pipes generated DDL through the `dsql-lint` process, splits on `;`,
+   regex-injects `IF NOT EXISTS`, and rebuilds every `MigrationCommand` as
+   `transactionSuppressed: true`.
+
+## Mechanism-by-mechanism
+
+| DSQL issue | aurora-dsql-orms | This provider |
+| --- | --- | --- |
+| Auto-savepoint around `SaveChanges` in a transaction | Suppressed at command layer | Prevented by `IRelationalTransactionFactory` with `SupportsSavepoints => false` |
+| Isolation level | `BEGIN` sent manually; requested level logged and ignored | `IRelationalConnection` ignores the requested level |
+| History-table lock | Suppressed | `IHistoryRepository` that does not lock |
+| `CREATE INDEX` | `dsql-lint` rewrite | Override of `Generate(CreateIndexOperation, ...)` |
+| FK on existing table | Likely relies on lint/per-command suppression | `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` in the generator |
+| One DDL per transaction | `transactionSuppressed: true` per rebuilt command | `IMigrationCommandExecutor` running one command per transaction |
+| Unsupported types/features | Limited; relies on server errors | Model validator fails fast with actionable messages |
+| Collections | Not addressed; native arrays pass through and fail | Primitive collections mapped to `jsonb` (see §5.1 of design) |
+| OCC retry | `DsqlExecutionStrategy` | `DsqlExecutionStrategy` (equivalent) |
+
+## Risks this design trades away
+
+Being explicit about what we accept:
+
+- **Provider internals coupling.** We override EF/Npgsql internals (`NpgsqlMigrationsSqlGenerator`,
+  `NpgsqlHistoryRepository`, `NpgsqlTypeMappingSource`, `NpgsqlRelationalConnection`). These can
+  change between EF Core majors. `aurora-dsql-orms` couples to fewer provider internals but to a
+  native binary and JSON schema instead.
+- **Feature coverage must be built.** The wrapping approach "passes through" anything it does not
+  recognize; the generation approach must explicitly handle every unsupported operation. We fail
+  loudly, which is intentional, but requires more work up front.
+- **Not battle-tested.** `aurora-dsql-orms` is published with an integration-tested sample; this
+  project is still at design stage.
+
+## What we keep from `aurora-dsql-orms`
+
+- The UUID (`gen_random_uuid()`) and identity (`GENERATED BY DEFAULT AS IDENTITY (CACHE n)`)
+  key conventions.
+- The idea of an EF `IExecutionStrategy` for `SQLSTATE 40001`.
+- Its documented DSQL behaviors as a checklist of what to handle.
+
+We deliberately do not reuse its connection/command wrappers, `dsql-lint` subprocess, regex
+idempotency, or `Migrator` override.
+
+## Interoperability
+
+Both packages claim the id `Amazon.AuroraDsql.EntityFrameworkCore` and both expose `UseDsql`, so
+they **cannot be referenced together**. A consuming application must choose one. Publishing this
+provider to NuGet under the same id would conflict with the AWS package and should be resolved
+(e.g. a distinct id) before any release.
+
+## References
+
+- `awslabs/aurora-dsql-orms`: https://github.com/awslabs/aurora-dsql-orms
+- This provider's design: [`design.md`](design.md)
+- Connector decision: [`connector-amazon-auroradsql-npgsql.md`](connector-amazon-auroradsql-npgsql.md)
