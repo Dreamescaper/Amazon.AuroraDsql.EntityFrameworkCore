@@ -38,6 +38,7 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
         // This extension is applied after NpgsqlOptionsExtension, so Replace(...) calls win.
         services.TryAddEnumerable(
             ServiceDescriptor.Scoped<IConventionSetPlugin, DsqlConventionSetPlugin>());
+        services.Replace(ServiceDescriptor.Scoped<IModelValidator, DsqlModelValidator>());
     }
 
     public void Validate(IDbContextOptions options)

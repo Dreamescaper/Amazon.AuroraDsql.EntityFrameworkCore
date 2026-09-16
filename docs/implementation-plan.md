@@ -78,8 +78,10 @@ trivial query" smoke test is covered by Phase 6 (the unit-test layer cannot conn
 - [x] Model-finalizing convention: UUID PKs default to `gen_random_uuid()`; explicit
       configuration is left untouched.
 - [ ] Decimal precision convention aligned with DSQL's `numeric(18,6)` default.
-- [ ] Model validator rejecting unsupported features: enums/`CREATE TYPE`, ranges, `hstore`,
-      `tsvector`, geometry/PostGIS, unsupported extensions, indexes on non-indexable columns.
+- [x] `DsqlModelValidator` rejecting unsupported features: any store type outside DSQL's supported
+      set (includes PG enums/`CREATE TYPE`, ranges, `hstore`, `tsvector`, geometry, `inet`,
+      native arrays) and indexes on non-indexable types (`json`, `jsonb`, `bytea`, `timetz`,
+      `interval`), plus any configured PostgreSQL extension.
 
 Decision (moved to Phase 3):
 
