@@ -41,6 +41,26 @@ internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
     }
 
     protected override void Generate(
+        AlterColumnOperation operation,
+        IModel? model,
+        MigrationCommandListBuilder builder)
+    {
+        var oldType = operation.OldColumn?.ColumnType;
+        var newType = operation.ColumnType;
+
+        if (oldType is not null
+            && newType is not null
+            && !string.Equals(oldType, newType, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Aurora DSQL does not support ALTER COLUMN ... TYPE ('{oldType}' -> '{newType}'). "
+                + "Add a new column and migrate the data, or drop and re-add the column.");
+        }
+
+        base.Generate(operation, model, builder);
+    }
+
+    protected override void Generate(
         AddForeignKeyOperation operation,
         IModel? model,
         MigrationCommandListBuilder builder,

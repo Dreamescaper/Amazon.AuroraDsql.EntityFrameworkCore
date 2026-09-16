@@ -9,6 +9,7 @@ public class Widget
     public int Quantity { get; set; }
     public List<int> Numbers { get; set; } = [];
     public List<string> Tags { get; set; } = [];
+    public Guid? OwnerId { get; set; }
 }
 
 public class EmulatorContext : DbContext

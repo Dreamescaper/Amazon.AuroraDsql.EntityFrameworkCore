@@ -1,4 +1,5 @@
 using Amazon.AuroraDsql.EntityFrameworkCore.Extensions;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests;
@@ -103,6 +104,43 @@ public class EmulatorIntegrationTests
 
             await transaction.CommitAsync();
         });
+    }
+
+    [Fact]
+    public async Task Foreign_key_accepts_existing_principal()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var context = _fixture.CreateContext();
+
+        await context.Database.ExecuteSqlAsync(
+            $"INSERT INTO \"Owners\" (\"Id\", \"Name\") VALUES ({ownerId}, 'owner')");
+
+        context.Widgets.Add(new Widget
+        {
+            Id = Guid.NewGuid(),
+            Name = "with-owner",
+            Quantity = 1,
+            OwnerId = ownerId,
+        });
+        await context.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task Foreign_key_rejects_missing_principal()
+    {
+        await using var context = _fixture.CreateContext();
+
+        context.Widgets.Add(new Widget
+        {
+            Id = Guid.NewGuid(),
+            Name = "bad-owner",
+            Quantity = 1,
+            OwnerId = Guid.NewGuid(),
+        });
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        var postgresException = Assert.IsType<PostgresException>(exception.InnerException);
+        Assert.Equal("23503", postgresException.SqlState);
     }
 
     [Fact]

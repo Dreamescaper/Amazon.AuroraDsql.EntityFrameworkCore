@@ -189,6 +189,24 @@ public class DsqlMigrationsSqlGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void Alter_column_type_is_rejected()
+    {
+        using var context = CreateContext();
+
+        var operation = new AlterColumnOperation
+        {
+            Name = "Quantity",
+            Table = "Widgets",
+            ClrType = typeof(long),
+            ColumnType = "bigint",
+            OldColumn = new AddColumnOperation { ClrType = typeof(int), ColumnType = "integer" },
+        };
+
+        var exception = Assert.Throws<InvalidOperationException>(() => Generate(context, operation));
+        Assert.Contains("ALTER COLUMN", exception.Message);
+    }
+
+    [Fact]
     public void Concurrent_index_is_rejected()
     {
         using var context = CreateContext();

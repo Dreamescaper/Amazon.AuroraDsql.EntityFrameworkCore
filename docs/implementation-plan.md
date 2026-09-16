@@ -118,9 +118,9 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
       - [x] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
       - [x] `AddForeignKeyOperation` → `NOT VALID`, then `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`
             (inline foreign keys in `CREATE TABLE` are unaffected).
-      - [ ] Reject unsupported migration operations (e.g. `ALTER COLUMN ... TYPE`, which the
-            emulator/DSQL refuses). Requires mapping each `AlterColumnOperation` to the DSQL-supported
-            `ALTER TABLE` subset.
+      - [x] Reject unsupported migration operations: `ALTER COLUMN ... TYPE` is refused with an
+            actionable message. (Mapping the full `AlterColumnOperation` surface onto DSQL's
+            `ALTER TABLE` subset remains a follow-up.)
 - [x] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`;
       returns a no-op lock and `LockReleaseBehavior.Explicit` (migrations are not serialized by a DB lock).
 - [x] `DsqlMigrationCommandExecutor` running each command in its own implicit transaction
@@ -168,8 +168,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
       connect, migrations (history table + `CREATE TABLE` + `CREATE INDEX ASYNC`, one DDL per
       transaction), CRUD, `jsonb` collections (round-trip + containment query), explicit
       transactions without savepoints, and `ExecuteInTransactionAsync`.
-- [ ] Remaining integration coverage: navigation properties, FK `NOT VALID` + `VALIDATE CONSTRAINT`
-      against the emulator, induced OCC conflict retry, 3,000-row cap, batch `SaveChanges` limits.
+- [x] FK `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` applied and enforced against
+      the emulator (valid insert succeeds, missing principal fails with SQLSTATE `23503`).
+- [ ] Remaining integration coverage: navigation properties, induced OCC conflict retry,
+      3,000-row cap, batch `SaveChanges` limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
 - [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
