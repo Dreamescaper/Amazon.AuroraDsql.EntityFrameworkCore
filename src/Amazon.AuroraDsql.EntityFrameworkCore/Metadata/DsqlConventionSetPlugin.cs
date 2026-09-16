@@ -8,6 +8,7 @@ internal sealed class DsqlConventionSetPlugin : IConventionSetPlugin
     public ConventionSet ModifyConventions(ConventionSet conventionSet)
     {
         conventionSet.ModelFinalizingConventions.Add(new DsqlModelFinalizingConvention());
+        conventionSet.PropertyAddedConventions.Add(new DsqlDecimalPrecisionConvention());
 
         return conventionSet;
     }
