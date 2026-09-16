@@ -49,9 +49,9 @@ Decisions referenced by this plan:
       (central package management in `Directory.Packages.props`).
 - [x] Enable nullable, implicit usings, `TreatWarningsAsErrors`, deterministic builds
       (`Directory.Build.props`); repo `NuGet.config` for reproducible restore.
-- [ ] Add `.editorconfig`, CI workflow (build + unit tests).
+- [x] Add `.editorconfig`, CI workflow (build + unit tests) in `.github/workflows/ci.yml`.
 
-**Exit:** `dotnet build` and `dotnet test` succeed on an empty solution.
+**Exit:** `dotnet build` and `dotnet test` succeed on an empty solution. Done.
 
 ## Phase 1 — Options and entry point
 
