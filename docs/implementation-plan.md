@@ -121,7 +121,8 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
       - [ ] Reject unsupported migration operations (e.g. `ALTER COLUMN ... TYPE`, which the
             emulator/DSQL refuses). Requires mapping each `AlterColumnOperation` to the DSQL-supported
             `ALTER TABLE` subset.
-- [ ] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`.
+- [x] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`;
+      returns a no-op lock and `LockReleaseBehavior.Explicit` (migrations are not serialized by a DB lock).
 - [ ] `DsqlMigrationCommandExecutor` running one command per transaction (1 DDL/tx).
 
 Deferred (added as a new task):

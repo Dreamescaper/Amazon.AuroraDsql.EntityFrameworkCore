@@ -45,6 +45,7 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
         services.Replace(ServiceDescriptor.Scoped<IModelValidator, DsqlModelValidator>());
         services.Replace(ServiceDescriptor.Scoped<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
         services.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
+        services.Replace(ServiceDescriptor.Scoped<IHistoryRepository, DsqlHistoryRepository>());
     }
 
     public void Validate(IDbContextOptions options)
