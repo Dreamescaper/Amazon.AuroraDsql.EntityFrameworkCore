@@ -124,7 +124,8 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
 - [x] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`;
       returns a no-op lock and `LockReleaseBehavior.Explicit` (migrations are not serialized by a DB lock).
 - [x] `DsqlMigrationCommandExecutor` running each command in its own implicit transaction
-      (1 DDL/tx). OCC retry around migration execution is deferred to Phase 5.
+      (1 DDL/tx). Migration execution is already wrapped in the execution strategy by EF's
+      `Migrator`, so OCC retry applies.
 
 Deferred (added as a new task):
 
@@ -170,8 +171,9 @@ conflict against a live/emulated conflict is verified in Phase 6.
       transactions without savepoints, and `ExecuteInTransactionAsync`.
 - [x] FK `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` applied and enforced against
       the emulator (valid insert succeeds, missing principal fails with SQLSTATE `23503`).
-- [ ] Remaining integration coverage: navigation properties, induced OCC conflict retry,
-      3,000-row cap, batch `SaveChanges` limits.
+- [x] Navigation properties (`Include` across the FK) round-trip.
+- [ ] Remaining integration coverage: induced OCC conflict retry, 3,000-row cap, batch
+      `SaveChanges` limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
 - [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.

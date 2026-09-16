@@ -10,6 +10,13 @@ public class Widget
     public List<int> Numbers { get; set; } = [];
     public List<string> Tags { get; set; } = [];
     public Guid? OwnerId { get; set; }
+    public Owner? Owner { get; set; }
+}
+
+public class Owner
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }
 
 public class EmulatorContext : DbContext
@@ -20,4 +27,12 @@ public class EmulatorContext : DbContext
     }
 
     public DbSet<Widget> Widgets => Set<Widget>();
+
+    public DbSet<Owner> Owners => Set<Owner>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+        => modelBuilder.Entity<Widget>()
+            .HasOne(w => w.Owner)
+            .WithMany()
+            .HasForeignKey(w => w.OwnerId);
 }

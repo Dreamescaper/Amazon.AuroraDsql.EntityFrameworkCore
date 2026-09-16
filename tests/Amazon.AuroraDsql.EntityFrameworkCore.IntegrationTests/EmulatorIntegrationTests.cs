@@ -107,6 +107,36 @@ public class EmulatorIntegrationTests
     }
 
     [Fact]
+    public async Task Navigates_from_widget_to_owner()
+    {
+        var ownerId = Guid.NewGuid();
+        var widgetId = Guid.NewGuid();
+
+        await using (var context = _fixture.CreateContext())
+        {
+            context.Owners.Add(new Owner { Id = ownerId, Name = "navigation" });
+            context.Widgets.Add(new Widget
+            {
+                Id = widgetId,
+                Name = "nav-widget",
+                Quantity = 1,
+                OwnerId = ownerId,
+            });
+            await context.SaveChangesAsync();
+        }
+
+        await using (var context = _fixture.CreateContext())
+        {
+            var widget = await context.Widgets
+                .Include(w => w.Owner)
+                .SingleAsync(w => w.Id == widgetId);
+
+            Assert.NotNull(widget.Owner);
+            Assert.Equal("navigation", widget.Owner!.Name);
+        }
+    }
+
+    [Fact]
     public async Task Foreign_key_accepts_existing_principal()
     {
         var ownerId = Guid.NewGuid();
