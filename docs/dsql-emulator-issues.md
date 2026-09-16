@@ -87,6 +87,23 @@ Source: emulator README "What it does not do". These are documented behavior, no
   A hand-rolled PostgreSQL will not enforce the 3,000-row cap or accept `admin`.
 - **Workaround:** Always use the published image or `docker-compose.yml`; never a bare PostgreSQL.
 
+## Open items / requested upstream
+
+### Deterministic OCC conflict injection is not reachable from the container
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Type:** limitation (blocked test), candidate upstream change
+- **Detail:** the emulator supports deterministic commit-conflict injection, but the rules come from
+  the embedded ruleset (`rules.Default()`; `session.occCommitConflict` reads
+  `classifier.Ruleset().OCC.Inject`). Neither `cmd/dsql-emu` nor the container exposes a flag/env to
+  supply a custom ruleset, so an induced `40001` cannot be triggered from integration tests.
+- **Impact on us:** the "induced OCC conflict is retried" integration test is blocked; OCC
+  classification and retry are covered by unit tests instead.
+- **Candidate fix (upstream, `Dreamescaper/dsql-emulator`):** add a `--rules <file>` flag (and
+  `DSQL_EMU_RULES` env) that loads a ruleset YAML and passes it via `proxy.Config.Ruleset`. A new
+  image release would then be pinned here and the test enabled.
+- **Upstream:** not filed yet.
+
 ## Findings log
 
 ### Explicit isolation level rejected (`0A000: Unsupported isolation level: READ COMMITTED`)

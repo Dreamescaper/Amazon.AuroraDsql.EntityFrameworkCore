@@ -172,8 +172,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
 - [x] FK `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` applied and enforced against
       the emulator (valid insert succeeds, missing principal fails with SQLSTATE `23503`).
 - [x] Navigation properties (`Include` across the FK) round-trip.
-- [ ] Remaining integration coverage: induced OCC conflict retry, 3,000-row cap, batch
-      `SaveChanges` limits.
+- [ ] Remaining integration coverage: induced OCC conflict retry (**blocked**: the emulator's
+      conflict injection needs a custom ruleset it does not expose; see
+      [`dsql-emulator-issues.md`](dsql-emulator-issues.md)), 3,000-row cap, batch `SaveChanges`
+      limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
 - [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
