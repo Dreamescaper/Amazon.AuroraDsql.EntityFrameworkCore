@@ -1,7 +1,9 @@
 using Amazon.AuroraDsql.EntityFrameworkCore.Metadata;
+using Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
 using Amazon.AuroraDsql.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -42,6 +44,7 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
             ServiceDescriptor.Scoped<IConventionSetPlugin, DsqlConventionSetPlugin>());
         services.Replace(ServiceDescriptor.Scoped<IModelValidator, DsqlModelValidator>());
         services.Replace(ServiceDescriptor.Scoped<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
+        services.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
     }
 
     public void Validate(IDbContextOptions options)

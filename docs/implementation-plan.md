@@ -113,13 +113,19 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
 
 ## Phase 3 — Migrations
 
-- [ ] `DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator`
-      - `CreateIndexOperation` → `CREATE INDEX ASYNC` (reject `CONCURRENTLY`).
-      - `ForeignKeyConstraint` → `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`.
-      - Deterministic `IF NOT EXISTS` / `IF EXISTS` per operation.
-      - Reject unsupported operations.
+- [~] `DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator`
+      - [x] `CreateIndexOperation` → `CREATE INDEX ASYNC` (reject `CONCURRENTLY`).
+      - [ ] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
+      - [ ] `ForeignKeyConstraint` → `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`.
+      - [ ] Reject unsupported operations.
 - [ ] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`.
 - [ ] `DsqlMigrationCommandExecutor` running one command per transaction (1 DDL/tx).
+
+Deferred (added as a new task):
+
+- [ ] Deterministic `IF NOT EXISTS` / `IF EXISTS` idempotency for partially-applied migrations.
+      EF's `__EFMigrationsHistory` plus per-command transactions handle the normal case; partial
+      failure recovery is an edge case handled separately to keep this phase small.
 
 **Exit:** `dotnet ef migrations add` produces DSQL-valid SQL; `dotnet ef database update`
 applies it against a cluster, including a re-run after a simulated partial failure.
