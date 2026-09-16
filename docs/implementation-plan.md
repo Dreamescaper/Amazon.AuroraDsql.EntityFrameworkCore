@@ -10,6 +10,12 @@ Phased delivery. Each phase has an exit criterion that is verifiable without gue
 - No ADO.NET wrapping, no regex over SQL, no external tools. See [`design.md`](design.md) §3–4.
 - Fail at model/SQL generation with actionable errors for unsupported features.
 
+## Target versions
+
+Decided in Phase 0 (latest stable at the time): `net10.0`, `Microsoft.EntityFrameworkCore.*`
+10.0.x, `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x, `Amazon.AuroraDsql.Npgsql` 1.1.x. Also
+recorded in [`../AGENTS.md`](../AGENTS.md) and [`design.md`](design.md).
+
 ## Solution layout
 
 ```
@@ -38,8 +44,8 @@ Decisions referenced by this plan:
 
 ## Phase 0 — Scaffold
 
-- [ ] Create solution and projects, target `net8.0` (align with the chosen EF Core major).
-- [ ] Reference `Npgsql.EntityFrameworkCore.PostgreSQL` and `Amazon.AuroraDsql.Npgsql`.
+- [ ] Create solution and projects, target `net10.0`.
+- [ ] Reference `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x and `Amazon.AuroraDsql.Npgsql` 1.1.x.
 - [ ] Enable nullable, implicit usings, `TreatWarningsAsErrors`, deterministic builds.
 - [ ] Add `.editorconfig`, CI workflow (build + unit tests).
 
