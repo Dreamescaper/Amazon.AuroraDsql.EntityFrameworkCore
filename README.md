@@ -26,7 +26,8 @@ DSQL-incompatible SQL**, at SQL-generation time:
 | FK added to existing table | `NpgsqlMigrationsSqlGenerator` | `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` |
 | 1 DDL per transaction | EF `IMigrationCommandExecutor` | per-command transaction executor |
 | OCC conflict (`SQLSTATE 40001`) | EF `IExecutionStrategy` | DSQL retry strategy |
-| Unsupported types/features (enums, ranges, arrays, PostGIS, `CREATE TYPE`) | model + type mapping | model validator / type mapping source |
+| Primitive collections (`int[]`, `List<string>`) | `NpgsqlTypeMappingSource` (native PG arrays) | map to a `jsonb` JSON array (like SQL Server), leveraging efcore.pg's existing JSON-collection translation |
+| Unsupported types/features (enums, ranges, PostGIS, `CREATE TYPE`) | model + type mapping | model validator / type mapping source |
 
 **No** ADO.NET connection/command wrappers, **no** regex on SQL text, **no** external
 `dsql-lint` subprocess. See [`docs/design.md`](docs/design.md) for the rationale.
