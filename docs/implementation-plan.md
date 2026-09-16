@@ -55,15 +55,23 @@ Decisions referenced by this plan:
 
 ## Phase 1 — Options and entry point
 
-- [ ] `DsqlDbContextOptionsBuilder` (identity cache size, retry count/delay, feature toggles).
-- [ ] `DsqlOptionsExtension : IDbContextOptionsExtension` with correct
+- [x] `DsqlDbContextOptionsBuilder` (plumbing; feature options added by their phases).
+- [x] `DsqlOptionsExtension : IDbContextOptionsExtension` with correct
       `DbContextOptionsExtensionInfo` (hash, `ShouldUseSameServiceProvider`, debug info).
-- [ ] `UseDsql(DbContextOptionsBuilder, DsqlDataSource | IServiceProvider, Action<...>)`
-      overloads and generic `DbContextOptionsBuilder<TContext>` variants.
-- [ ] Pass the connector's `NpgsqlDataSource` directly to `UseNpgsql(...)`.
+- [x] `UseDsql(DbContextOptionsBuilder, NpgsqlDataSource | DsqlDataSource | IServiceProvider,
+      Action<...>)` overloads and generic `DbContextOptionsBuilder<TContext>` variants.
+- [x] Pass the data source directly to `UseNpgsql(...)`; `NpgsqlConnection`/`NpgsqlCommand`
+      identity preserved.
 
-**Exit:** a `DbContext` configured with `UseDsql` can open a connection and run a trivial query
-against a DSQL cluster.
+Decisions:
+
+- No `UseDsql(string host)` overload: building the connector's data source is async-only, so a
+  sync-over-async overload is a deadlock hazard. Create a `DsqlDataSource` (or register one in DI)
+  and pass it instead.
+
+**Exit:** unit tests assert `UseDsql` registers the Npgsql database provider and the DSQL
+extension, and that repeated calls replace rather than duplicate it. The "connect and run a
+trivial query" smoke test is covered by Phase 6 (the unit-test layer cannot connect).
 
 ## Phase 2 — Model conventions and validation
 
