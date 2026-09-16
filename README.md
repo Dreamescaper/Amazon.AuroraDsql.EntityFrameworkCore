@@ -4,13 +4,51 @@ An Entity Framework Core provider for **Amazon Aurora DSQL**, built on top of
 [Npgsql.EntityFrameworkCore.PostgreSQL](https://github.com/npgsql/efcore.pg) and the
 [Amazon.AuroraDsql.Npgsql](https://github.com/awslabs/aurora-dsql-connectors/tree/main/dotnet/npgsql) connector.
 
-> **Status:** design phase. No working implementation yet — see
-> [`docs/implementation-plan.md`](docs/implementation-plan.md).
+> **Status:** usable core — options/`UseDsql`, model conventions and validation, `jsonb`
+> collections, migrations (`CREATE INDEX ASYNC`, FK `NOT VALID`, one DDL per transaction), no
+> savepoints, and OCC retry. Verified against the `dsql-emulator`; not yet exercised against a
+> live cluster. See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what remains.
 
 ## Goal
 
 Let developers use ordinary EF Core (`DbContext`, LINQ, migrations, `SaveChanges`) against
 Aurora DSQL, which is PostgreSQL-wire-compatible but only supports a subset of PostgreSQL.
+
+## Usage
+
+```csharp
+using Amazon.AuroraDsql.EntityFrameworkCore.Extensions;
+
+// Aurora DSQL via the AWS connector (IAM auth):
+var dataSource = await AuroraDsql.CreateDataSourceAsync(new DsqlConfig
+{
+    Host = "your-cluster.dsql.us-east-1.on.aws",
+});
+
+services.AddDbContext<MyContext>(options => options.UseDsql(dataSource));
+```
+
+Or pass a plain `NpgsqlDataSource` (tests, the emulator, or user-managed auth):
+
+```csharp
+options.UseDsql(myNpgsqlDataSource);
+```
+
+Explicit transactions with OCC retry:
+
+```csharp
+await context.ExecuteInTransactionAsync(async ct =>
+{
+    context.Orders.Add(order);
+    await context.SaveChangesAsync(ct);
+});
+```
+
+Configuration: `options.UseDsql(dataSource, dsql => dsql.EnableIdentityColumns().SetMaxRetryCount(3))`.
+
+> **Package id note:** this project currently uses the same id (`Amazon.AuroraDsql.EntityFrameworkCore`)
+> as the AWS Labs adapter. Both expose `UseDsql` and cannot be referenced together; the id must be
+> resolved before any NuGet release. See [`docs/comparison-aurora-dsql-orms.md`](docs/comparison-aurora-dsql-orms.md).
 
 ## Approach
 
@@ -21,7 +59,7 @@ DSQL-incompatible SQL**, at SQL-generation time:
 | --- | --- | --- |
 | `SAVEPOINT` around `SaveChanges` in a transaction | EF `BatchExecutor` | `IRelationalTransactionFactory` with `SupportsSavepoints => false` |
 | `LOCK TABLE ... ACCESS EXCLUSIVE` on history table | `NpgsqlHistoryRepository` | custom `IHistoryRepository` |
-| `SET TRANSACTION ISOLATION LEVEL` | `NpgsqlRelationalConnection` | subclass, force `Unspecified` |
+| `SET TRANSACTION ISOLATION LEVEL` | `NpgsqlRelationalConnection` | subclass, force `RepeatableRead` |
 | `CREATE INDEX` (not supported) | `NpgsqlMigrationsSqlGenerator` | emit `CREATE INDEX ASYNC` |
 | FK added to existing table | `NpgsqlMigrationsSqlGenerator` | `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` |
 | 1 DDL per transaction | EF `IMigrationCommandExecutor` | per-command transaction executor |

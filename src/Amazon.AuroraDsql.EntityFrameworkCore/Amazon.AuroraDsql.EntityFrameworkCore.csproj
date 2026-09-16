@@ -7,6 +7,22 @@
     <NoWarn>$(NoWarn);EF1001</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>Amazon.AuroraDsql.EntityFrameworkCore</PackageId>
+    <Version>10.0.0-preview.1</Version>
+    <Authors>Oleksandr Liakhevych</Authors>
+    <Description>Entity Framework Core provider for Amazon Aurora DSQL, built on Npgsql.</Description>
+    <PackageTags>EntityFrameworkCore;EFCore;AuroraDSQL;Aurora;DSQL;AWS;PostgreSQL;Npgsql</PackageTags>
+    <RepositoryUrl>https://github.com/Dreamescaper/Amazon.AuroraDsql.EntityFrameworkCore</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Amazon.AuroraDsql.Npgsql" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />

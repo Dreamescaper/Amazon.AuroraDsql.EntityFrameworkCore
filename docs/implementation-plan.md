@@ -182,8 +182,12 @@ of known-unsupported scenarios.
 
 ## Phase 7 — Packaging and docs
 
-- [ ] NuGet metadata, README usage section, versioning aligned with EF Core major.
-- [ ] CI publishing workflow (manual approval gate).
+- [x] NuGet metadata (description, tags, repo URL, readme), version `10.0.0-preview.1` aligned with
+      the EF Core major.
+- [x] README usage section (`UseDsql` with the connector or a raw `NpgsqlDataSource`,
+      `ExecuteInTransactionAsync`, configuration).
+- [x] Release workflow (`.github/workflows/release.yml`): manual + approval gate, packs and uploads
+      an artifact; NuGet push is commented out until the package id is resolved.
 - [ ] Decide on an OSS license (blocked on owner decision; currently TBD).
 
 **Exit:** package installable from NuGet and usable following the README alone.
