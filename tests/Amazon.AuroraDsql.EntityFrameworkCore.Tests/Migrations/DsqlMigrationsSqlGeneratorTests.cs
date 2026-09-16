@@ -130,6 +130,65 @@ public class DsqlMigrationsSqlGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void Add_foreign_key_is_not_valid_then_validated_async()
+    {
+        using var context = CreateContext();
+
+        var commands = Generate(
+            context,
+            new AddForeignKeyOperation
+            {
+                Name = "FK_Widgets_Owners_OwnerId",
+                Table = "Widgets",
+                Columns = ["OwnerId"],
+                PrincipalTable = "Owners",
+                PrincipalColumns = ["Id"],
+            });
+
+        var sql = string.Join("\n", commands.Select(c => c.CommandText));
+
+        Assert.Contains("NOT VALID", sql);
+        Assert.Contains("ALTER TABLE ASYNC", sql);
+        Assert.Contains("VALIDATE CONSTRAINT", sql);
+    }
+
+    [Fact]
+    public void Inline_foreign_key_in_create_table_is_not_marked_not_valid()
+    {
+        using var context = CreateContext();
+
+        var operation = new CreateTableOperation { Name = "Widgets" };
+        operation.Columns.Add(new AddColumnOperation
+        {
+            Name = "Id",
+            Table = "Widgets",
+            ClrType = typeof(Guid),
+            ColumnType = "uuid",
+            IsNullable = false,
+        });
+        operation.PrimaryKey = new AddPrimaryKeyOperation
+        {
+            Name = "PK_Widgets",
+            Table = "Widgets",
+            Columns = ["Id"],
+        };
+        operation.ForeignKeys.Add(new AddForeignKeyOperation
+        {
+            Name = "FK_Widgets_Owners_OwnerId",
+            Table = "Widgets",
+            Columns = ["Id"],
+            PrincipalTable = "Owners",
+            PrincipalColumns = ["Id"],
+        });
+
+        var commands = Generate(context, operation);
+        var sql = string.Join("\n", commands.Select(c => c.CommandText));
+
+        Assert.Contains("FOREIGN KEY", sql);
+        Assert.DoesNotContain("NOT VALID", sql);
+    }
+
+    [Fact]
     public void Concurrent_index_is_rejected()
     {
         using var context = CreateContext();

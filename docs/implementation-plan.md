@@ -116,8 +116,11 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
 - [~] `DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator`
       - [x] `CreateIndexOperation` → `CREATE INDEX ASYNC` (reject `CONCURRENTLY`).
       - [x] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
-      - [ ] `ForeignKeyConstraint` → `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`.
-      - [ ] Reject unsupported operations.
+      - [x] `AddForeignKeyOperation` → `NOT VALID`, then `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`
+            (inline foreign keys in `CREATE TABLE` are unaffected).
+      - [ ] Reject unsupported migration operations (e.g. `ALTER COLUMN ... TYPE`, which the
+            emulator/DSQL refuses). Requires mapping each `AlterColumnOperation` to the DSQL-supported
+            `ALTER TABLE` subset.
 - [ ] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`.
 - [ ] `DsqlMigrationCommandExecutor` running one command per transaction (1 DDL/tx).
 

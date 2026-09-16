@@ -40,6 +40,40 @@ internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
         base.ColumnDefinition(schema, table, name, operation, model, builder);
     }
 
+    protected override void Generate(
+        AddForeignKeyOperation operation,
+        IModel? model,
+        MigrationCommandListBuilder builder,
+        bool terminate = true)
+    {
+        // A foreign key added to an existing table must be added NOT VALID, then validated
+        // asynchronously as a separate statement.
+        builder
+            .Append("ALTER TABLE ")
+            .Append(SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
+            .Append(" ADD ");
+
+        ForeignKeyConstraint(operation, model, builder);
+        builder.Append(" NOT VALID");
+
+        if (terminate)
+        {
+            builder.AppendLine(";");
+            EndStatement(builder);
+        }
+
+        if (operation.Name is not null)
+        {
+            builder
+                .Append("ALTER TABLE ASYNC ")
+                .Append(SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
+                .Append(" VALIDATE CONSTRAINT ")
+                .Append(SqlGenerationHelper.DelimitIdentifier(operation.Name))
+                .AppendLine(";");
+            EndStatement(builder);
+        }
+    }
+
     private void ApplyIdentityCache(ColumnOperation operation)
     {
         if (!_options.UseIdentityColumns
