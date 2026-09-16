@@ -103,7 +103,6 @@ public static class DsqlDbContextOptionsExtensions
         var dsqlBuilder = new DsqlDbContextOptionsBuilder(optionsBuilder);
         dsqlOptionsAction?.Invoke(dsqlBuilder);
 
-        var extension = new DsqlOptionsExtension();
-        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(dsqlBuilder.Options);
     }
 }

@@ -12,4 +12,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Amazon.AuroraDsql.EntityFrameworkCore.Tests" />
+    <InternalsVisibleTo Include="Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests" />
+  </ItemGroup>
+
 </Project>
