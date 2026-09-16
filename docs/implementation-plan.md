@@ -115,7 +115,7 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
 
 - [~] `DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator`
       - [x] `CreateIndexOperation` → `CREATE INDEX ASYNC` (reject `CONCURRENTLY`).
-      - [ ] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
+      - [x] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
       - [ ] `ForeignKeyConstraint` → `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`.
       - [ ] Reject unsupported operations.
 - [ ] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`.

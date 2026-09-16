@@ -1,8 +1,11 @@
+using Amazon.AuroraDsql.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.Internal;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Migrations;
 
@@ -14,13 +17,42 @@ namespace Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
 /// </summary>
 internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
 {
+    private readonly DsqlOptionsExtension _options;
+
     private ISqlGenerationHelper SqlGenerationHelper => Dependencies.SqlGenerationHelper;
 
     public DsqlMigrationsSqlGenerator(
         MigrationsSqlGeneratorDependencies dependencies,
-        INpgsqlSingletonOptions npgsqlSingletonOptions)
+        INpgsqlSingletonOptions npgsqlSingletonOptions,
+        IDbContextOptions contextOptions)
         : base(dependencies, npgsqlSingletonOptions)
+        => _options = contextOptions.FindExtension<DsqlOptionsExtension>() ?? new DsqlOptionsExtension();
+
+    protected override void ColumnDefinition(
+        string? schema,
+        string table,
+        string name,
+        ColumnOperation operation,
+        IModel? model,
+        MigrationCommandListBuilder builder)
     {
+        ApplyIdentityCache(operation);
+        base.ColumnDefinition(schema, table, name, operation, model, builder);
+    }
+
+    private void ApplyIdentityCache(ColumnOperation operation)
+    {
+        if (!_options.UseIdentityColumns
+            || operation[NpgsqlAnnotationNames.IdentityOptions] is not null
+            || operation[NpgsqlAnnotationNames.ValueGenerationStrategy] is not NpgsqlValueGenerationStrategy strategy
+            || strategy is not (NpgsqlValueGenerationStrategy.IdentityAlwaysColumn
+                or NpgsqlValueGenerationStrategy.IdentityByDefaultColumn))
+        {
+            return;
+        }
+
+        operation[NpgsqlAnnotationNames.IdentityOptions] =
+            new IdentitySequenceOptionsData { NumbersToCache = _options.IdentityCacheSize }.Serialize();
     }
 
     protected override void Generate(
