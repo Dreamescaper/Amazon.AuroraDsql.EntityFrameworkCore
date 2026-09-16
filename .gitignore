@@ -1,0 +1,40 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+
+# Rider / VS
+.idea/
+.vs/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+coverage*.xml
+coverage*.json
+
+# Azure / publish
+publish/
+*.pubxml
+*.pubxml.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets / environment
+.env
+.env.*
+appsettings.Development.json
