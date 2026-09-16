@@ -97,16 +97,16 @@ Decision (moved to Phase 3):
 
 ## Phase 2b — Primitive collections as `jsonb`
 
-- [ ] `DsqlTypeMappingSource : NpgsqlTypeMappingSource` overriding
-      `FindCollectionMapping(storeType, modelClrType, providerClrType, elementMapping)`:
-      use `TryFindJsonCollectionMapping` and attach `CollectionToJsonStringConverter<TElement>`
-      to a `jsonb` mapping (mirror `SqlServerTypeMappingSource.FindCollectionMapping`).
-- [ ] Ensure `byte[]` stays `bytea` and dictionaries are excluded.
-- [ ] Verify the composed mapping sets `ElementTypeMapping` and a `JsonValueReaderWriter`, so
-      efcore.pg's existing `TranslatePrimitiveCollection` JSON branch
-      (`jsonb_array_elements_text ... WITH ORDINALITY`) engages without a custom translator.
-- [ ] Column store type is `jsonb`; `.HasColumnType("json")` is honored.
-- [ ] Model validator rejects `HasIndex` on a primitive collection (`jsonb` is not indexable).
+- [x] `DsqlTypeMappingSource : NpgsqlTypeMappingSource` overriding
+      `FindCollectionMapping(storeType, modelClrType, providerClrType, elementMapping)`: uses
+      `TryFindJsonCollectionMapping` and attaches `CollectionToJsonStringConverter<TElement>` to an
+      `NpgsqlJsonTypeMapping` for `jsonb`.
+- [x] `byte[]` stays `bytea`; dictionaries are excluded (by `TryFindJsonCollectionMapping`).
+- [x] The composed mapping sets `ElementTypeMapping`, so efcore.pg's JSON collection translation
+      engages without a custom translator. Verified: `Contains` → `@> to_jsonb(...)`,
+      element queries → `jsonb_array_elements_text(...)`.
+- [x] Column store type is `jsonb`; `.HasColumnType("json")` is honored.
+- [x] Model validator rejects `HasIndex` on a `jsonb` column (Phase 2).
 
 **Exit:** unit tests assert the generated column type and the `jsonb_array_elements_text` SQL
 for `Contains`, `Any` and element access; integration tests round-trip arrays and lists.

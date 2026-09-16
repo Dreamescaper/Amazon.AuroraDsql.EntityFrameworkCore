@@ -147,6 +147,11 @@ It exists today for scalar collections nested inside JSON documents; once the ma
 routes top-level primitive collections to `NpgsqlJsonTypeMapping`, the same branch is used
 automatically. **No custom query translator is required.**
 
+Verified translations against DSQL-supported JSON operators:
+
+- `collection.Contains(x)` → `"col" @> to_jsonb(x)` (containment, no unnesting);
+- element queries (`Any`, element access) → `jsonb_array_elements_text("col") WITH ORDINALITY`.
+
 For that branch to engage, the composed mapping must satisfy:
 
 - `StoreType` is `jsonb` (or `json`; selectable with `.HasColumnType("json")`);
