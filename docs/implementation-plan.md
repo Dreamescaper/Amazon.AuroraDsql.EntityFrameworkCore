@@ -19,7 +19,7 @@ recorded in [`../AGENTS.md`](../AGENTS.md) and [`design.md`](design.md).
 ## Solution layout
 
 ```
-Amazon.AuroraDsql.EntityFrameworkCore.sln
+Amazon.AuroraDsql.EntityFrameworkCore.slnx
 src/
   Amazon.AuroraDsql.EntityFrameworkCore/            # provider adapter
     Extensions/                                     # UseDsql(...) entry points
@@ -44,9 +44,11 @@ Decisions referenced by this plan:
 
 ## Phase 0 — Scaffold
 
-- [ ] Create solution and projects, target `net10.0`.
-- [ ] Reference `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x and `Amazon.AuroraDsql.Npgsql` 1.1.x.
-- [ ] Enable nullable, implicit usings, `TreatWarningsAsErrors`, deterministic builds.
+- [x] Create solution (`.slnx`) and projects, target `net10.0`; pins via `global.json`.
+- [x] Reference `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x and `Amazon.AuroraDsql.Npgsql` 1.1.x
+      (central package management in `Directory.Packages.props`).
+- [x] Enable nullable, implicit usings, `TreatWarningsAsErrors`, deterministic builds
+      (`Directory.Build.props`); repo `NuGet.config` for reproducible restore.
 - [ ] Add `.editorconfig`, CI workflow (build + unit tests).
 
 **Exit:** `dotnet build` and `dotnet test` succeed on an empty solution.

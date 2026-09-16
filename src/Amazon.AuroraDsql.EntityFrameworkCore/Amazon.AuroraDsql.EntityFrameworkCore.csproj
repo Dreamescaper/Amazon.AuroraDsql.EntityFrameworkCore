@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Amazon.AuroraDsql.EntityFrameworkCore</RootNamespace>
+    <AssemblyName>Amazon.AuroraDsql.EntityFrameworkCore</AssemblyName>
+    <!-- We deliberately override EF Core/Npgsql provider internals; see docs/design.md. -->
+    <NoWarn>$(NoWarn);EF1001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.AuroraDsql.Npgsql" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+</Project>
