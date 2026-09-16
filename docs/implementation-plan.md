@@ -139,13 +139,14 @@ failure remains deferred.
 
 ## Phase 4 — Transactions and runtime SQL
 
-- [ ] `DsqlRelationalConnection` forcing the DSQL isolation level (never emits
+- [x] `DsqlRelationalConnection` forcing `IsolationLevel.Unspecified` (never emits
       `SET TRANSACTION ISOLATION LEVEL`).
-- [ ] `DsqlRelationalTransactionFactory` returning a transaction with `SupportsSavepoints => false`.
-- [ ] Register overrides with `services.Replace(...)` in `ApplyServices`.
+- [x] `DsqlRelationalTransactionFactory` returning a transaction with `SupportsSavepoints => false`.
+- [x] Register overrides with `services.Replace(...)` in `ApplyServices`.
 
-**Exit:** `SaveChanges` inside an explicit transaction emits no `SAVEPOINT`; captured SQL
-contains no `SET TRANSACTION ISOLATION LEVEL`.
+**Exit:** unit tests assert the connection and transaction factory are replaced. That no
+`SAVEPOINT` / `SET TRANSACTION ISOLATION LEVEL` is emitted is verified against the emulator in
+Phase 6.
 
 ## Phase 5 — OCC retry
 

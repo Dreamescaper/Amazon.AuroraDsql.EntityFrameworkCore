@@ -4,6 +4,7 @@ using Amazon.AuroraDsql.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -47,6 +48,8 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
         services.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
         services.Replace(ServiceDescriptor.Scoped<IHistoryRepository, DsqlHistoryRepository>());
         services.Replace(ServiceDescriptor.Scoped<IMigrationCommandExecutor, DsqlMigrationCommandExecutor>());
+        services.Replace(ServiceDescriptor.Scoped<INpgsqlRelationalConnection, DsqlRelationalConnection>());
+        services.Replace(ServiceDescriptor.Singleton<IRelationalTransactionFactory, DsqlRelationalTransactionFactory>());
     }
 
     public void Validate(IDbContextOptions options)
