@@ -123,7 +123,8 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
             `ALTER TABLE` subset.
 - [x] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`;
       returns a no-op lock and `LockReleaseBehavior.Explicit` (migrations are not serialized by a DB lock).
-- [ ] `DsqlMigrationCommandExecutor` running one command per transaction (1 DDL/tx).
+- [x] `DsqlMigrationCommandExecutor` running each command in its own implicit transaction
+      (1 DDL/tx). OCC retry around migration execution is deferred to Phase 5.
 
 Deferred (added as a new task):
 
@@ -132,7 +133,9 @@ Deferred (added as a new task):
       failure recovery is an edge case handled separately to keep this phase small.
 
 **Exit:** `dotnet ef migrations add` produces DSQL-valid SQL; `dotnet ef database update`
-applies it against a cluster, including a re-run after a simulated partial failure.
+applies it against a cluster, including a re-run after a simulated partial failure. SQL generation is
+unit-verified; the end-to-end apply is verified in Phase 6 (emulator), and idempotency on partial
+failure remains deferred.
 
 ## Phase 4 — Transactions and runtime SQL
 
