@@ -42,7 +42,10 @@ Source: emulator README "What it does not do". These are documented behavior, no
 
 ### IAM tokens accepted but not validated
 - **Type:** limitation
-- **Impact:** The connector's IAM path cannot be exercised locally. Any password connects.
+- **Impact:** Any password connects; the token is never checked. Separately, the
+  `Amazon.AuroraDsql.Npgsql` connector cannot be used here anyway, because it forces
+  `SslMode=VerifyFull` (which rejects the emulator's self-signed certificate) and requires real
+  AWS credentials/region to mint a token.
 - **Workaround:** Integration tests create a plain `NpgsqlDataSource` (not `Amazon.AuroraDsql.Npgsql`)
   with `SSL Mode=Require` and a dummy password. IAM auth is covered by the live suite only.
 

@@ -64,10 +64,20 @@ Adopt **A + C**:
 - The provider carries an AWS SDK dependency for the convenience path. Option B remains open if
   the dependency proves too heavy; the internal design (accept `NpgsqlDataSource`) means users
   can always bypass the connector.
-- **Tests cannot use the connector's IAM path against the local emulator** (which accepts but does
-  not validate tokens). Integration tests must build a plain `NpgsqlDataSource` pointing at the
-  emulator with `SslMode=Require` and a dummy password. See
-  [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md).
+- **The connector cannot talk to the local emulator out of the box**, for two independent reasons:
+  1. It requires a resolvable AWS region and credentials to mint an IAM token, even though the
+     emulator ignores the token. A local host (`127.0.0.1`/`localhost`) does not match the
+     `*.dsql[.x].<region>.on.aws` pattern `Util.ParseRegion` expects, so `AWS_REGION` (or
+     `DsqlConfig.Region`) must be set; and `Token.ResolveCredentialsAsync` must find credentials
+     (dummy `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` suffice — token generation is local SigV4
+     presigning and makes no network calls).
+  2. More importantly, it forces `SslMode = VerifyFull` and `SslNegotiation = Direct` *after* the
+     `ConfigureConnectionString` callback, and these invariants cannot be overridden. The emulator
+     serves a **self-signed certificate** by default, which `VerifyFull` rejects.
+  It can be coerced to work (dummy credentials, a region, and a custom certificate with a matching
+  SAN that the client trusts), but that is more work than building a plain `NpgsqlDataSource`.
+  Integration tests therefore use a plain data source with `SslMode=Require` and a dummy password.
+  See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md).
 
 ## References
 

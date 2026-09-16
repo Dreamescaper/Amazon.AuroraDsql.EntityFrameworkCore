@@ -62,9 +62,11 @@ public sealed class DsqlEmulatorFixture : IAsyncLifetime
 }
 ```
 
-Create the data source directly with Npgsql — **do not** use `Amazon.AuroraDsql.Npgsql` here,
-because the connector always requests an IAM token and resolves a real endpoint/region, while the
-emulator accepts any password.
+Create the data source directly with Npgsql — **do not** use `Amazon.AuroraDsql.Npgsql` here.
+The connector forces `SslMode=VerifyFull` (not overridable), which rejects the emulator's
+self-signed certificate, and it additionally requires AWS credentials plus a region to mint a
+token the emulator never checks. Details:
+[`connector-amazon-auroradsql-npgsql.md`](connector-amazon-auroradsql-npgsql.md).
 
 ```csharp
 var dataSource = new NpgsqlDataSourceBuilder(fixture.ConnectionString).Build();
