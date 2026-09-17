@@ -35,6 +35,20 @@ jobs:
           name: unit-test-results
           path: TestResults
 
+  compat-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Separate project, not in the solution: builds the efcore.pg compatibility harness.
+      # Running it needs the dsql-emulator container (see compat/efcorepg-functional/README.md).
+      - name: Build compatibility harness
+        run: dotnet build compat/efcorepg-functional/DsqlEfcorePgFunctionalTests.csproj -c Release
+
   integration-tests:
     runs-on: ubuntu-latest
     steps:

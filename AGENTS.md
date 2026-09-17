@@ -49,6 +49,9 @@ Record any change to these in [`docs/design.md`](docs/design.md) and in this fil
 
 ## Testing
 
+- The efcore.pg compatibility harness lives in `compat/efcorepg-functional/` (deliberately **not**
+  in the solution, so it is a separate project from the main tests). It is built by its own CI job.
+  See its `README.md` and `FINDINGS.md`.
 - Unit tests must not require a database.
 - Integration tests use the `dsql-emulator` container via Testcontainers.
   See [`docs/testing-with-dsql-emulator.md`](docs/testing-with-dsql-emulator.md).
