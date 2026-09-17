@@ -204,9 +204,15 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
       - [x] Widen `int` identity keys to `bigint` (DSQL requires bigint identity; the emulator
             accepts integer — [dsql-emulator#2](https://github.com/Dreamescaper/dsql-emulator/issues/2)).
-      - [ ] Re-run the full harness against a live cluster (a fresh token/AWS credentials window
-            long enough to finish) and record the remaining differences in
+      - [x] First live pass over the non-Northwind harness suites: provider 9/9, `Find` 411/411,
+            `CompositeKeys` 14/14, `FunkyData` 42/42, `Character` 4/4, `Navigation` 2/2,
+            `AdHocMiscellaneous` 65/71, `AdHocNavigations` 24/25. See
             [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md).
+      - [ ] Run the Northwind suites live (needs a credentials-based window; a 15-minute token is too
+            short for the 1 MB script load).
+      - [ ] Investigate `0A000: ddl and dml are not supported in the same transaction` seen live in
+            `AdHocMiscellaneousQueryNpgsqlTest` (emulator does not enforce it for the setup path).
+      - [ ] Investigate transient `40001` during harness store reset on a live cluster.
       - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with an EF expression-type error; investigate or document as unsupported.
       - [ ] Expose null-ordering (efcore.pg's `ReverseNullOrdering`, internal) or default to

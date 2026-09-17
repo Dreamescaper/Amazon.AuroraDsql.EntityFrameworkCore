@@ -32,20 +32,33 @@ A single token lives 15 minutes, so use it for the fast suites only. Never commi
 
 ## Results
 
+A first full live pass (with a short-lived token) covered the provider suite and the non-Northwind
+harness suites. Northwind suites load a 1 MB script statement-by-statement over the WAN and did not
+fit the 15-minute token window; they are pending a credentials-based run.
+
 | Suite | Emulator | Live cluster |
 | --- | --- | --- |
 | Provider integration (`tests/.../IntegrationTests`) | 9/9 | **9/9** |
-| Harness `FindNpgsqlTest` | 411/411 | see below |
-| Harness `NorthwindWhereQueryNpgsqlTest` | 417/421 | see below |
-| Harness `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 | pending |
+| `FindNpgsqlTest` | 411/411 | **411/411** |
+| `CompositeKeysQueryNpgsqlTest` | 14/14 | **14/14** |
+| `CompositeKeysSplitQueryNpgsqlTest` | 14/14 | **14/14**¹ |
+| `FunkyDataQueryNpgsqlTest` | 42/42 | **42/42** |
+| `CharacterQueryNpgsqlTest` | 4/4 | **4/4** |
+| `NavigationTest` | 2/2 | **2/2** |
+| `AdHocMiscellaneousQueryNpgsqlTest` | 69/71 (2 skipped) | **65/71** (4 failed, 2 skipped)² |
+| `AdHocNavigationsQueryNpgsqlTest` | 24/25 | **24/25** (1 failed)³ |
+| `NorthwindWhereQueryNpgsqlTest` | 417/421 | pending |
+| `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 | pending |
+
+¹ Failed once with a transient `40001`, passed on retry — see below.
+² `0A000: ddl and dml are not supported in the same transaction` and `40001` conflicts — see below.
+³ The model validator rejects a `bytea` index (`Comment.BlogName`), same as on the emulator.
 
 The provider integration suite passes unchanged on a real cluster: migrations (`CREATE TABLE`,
 `CREATE INDEX ASYNC`, `ALTER TABLE ... ADD CONSTRAINT ... NOT VALID` + `ALTER TABLE ASYNC ...
 VALIDATE CONSTRAINT`), `jsonb` collections, foreign keys, explicit transactions without savepoints
-and `ExecuteInTransactionAsync`.
-
-The harness was first blocked on live by the identity-column difference below, fixed on our side;
-a full live re-run is pending a token/credentials window long enough to finish.
+and `ExecuteInTransactionAsync`. `FindNpgsqlTest` also passes, which exercises `EnsureCreated` of a
+large model with `int` identity keys widened to `bigint`.
 
 ## Differences found
 
@@ -75,6 +88,21 @@ On a real cluster, `information_schema.routines` lists `sys.supported_datatypes`
 `42501: must be owner of routine sys.supported_datatypes`. The harness now excludes `sys` (and the
 provider's `HasTables` already did).
 
+### DDL and DML in the same transaction (`0A000`)
+
+Live, `AdHocMiscellaneousQueryNpgsqlTest` reports
+`0A000: ddl and dml are not supported in the same transaction`. The same suite passes against the
+emulator, which does not enforce the separation as strictly for the harness's `EnsureCreated` +
+seed path. Open: identify the exact statement pair (likely `EnsureCreated`/history-table handling
+under the spec fixture) and either make the provider separate them or document the limitation.
+
+### Transient `40001` during suite setup
+
+`CompositeKeysSplitQueryNpgsqlTest` failed all 14 tests once with `40001` at store
+initialisation (drop/create) and passed on a re-run. Worth understanding whether the store reset
+pattern (many `DROP TABLE` statements) can collide on a real cluster, and whether the OCC execution
+strategy should cover migration/setup commands.
+
 ## Known caveats from running live
 
 - **`List<object>` / `object[]` `Contains` over a widened int key.** After the `int` → `bigint`
@@ -87,3 +115,5 @@ provider's `HasTables` already did).
   applies migrations. Use a throwaway cluster.
 - **Single database.** Isolation between fixtures (and tenants) needs schemas or separate clusters;
   run one harness class per invocation.
+- **Set-up flakiness under OCC.** Live runs can surface `40001` during fixture/reset operations;
+  re-run a class before treating a failure as real.
