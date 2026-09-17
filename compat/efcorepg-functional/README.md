@@ -34,7 +34,12 @@ dotnet test --filter "FullyQualifiedName~FindNpgsqlTest"
 
 ## Ported so far
 
-- `FindNpgsqlTest`
+`FindNpgsqlTest`, `ManyToManyLoadNpgsqlTest`, `FieldMappingNpgsqlTest`, `AdHocMiscellaneousQueryNpgsqlTest`,
+`AdHocNavigationsQueryNpgsqlTest`, `EntitySplittingQueryNpgsqlTest`, `FunkyDataQueryNpgsqlTest`,
+`CompositeKeysQueryNpgsqlTest`, `CompositeKeysSplitQueryNpgsqlTest`, `CharacterQueryNpgsqlTest`,
+`NavigationTest`, `ConnectionSpecificationTest`, `BuiltInDataTypesNpgsqlTest`, `BatchingTest`,
+`OptimisticConcurrencyNpgsqlTest`, `DataBindingNpgsqlTest`, `CustomConvertersNpgsqlTest`,
+`ConvertToProviderTypesNpgsqlTest`, `NpgsqlValueGenerationScenariosTest`, `DefaultValuesTest`.
 
-More classes are copied in as the failures are triaged. Each fixture's store is shared and reset
-per run; classes that need multi-database isolation or unsupported features are expected to fail.
+Results and classification: [`FINDINGS.md`](FINDINGS.md). Run one class at a time — DSQL has a
+single database, so fixtures clobber each other if run together.

@@ -89,9 +89,7 @@ public class NpgsqlTestStore : RelationalTestStore
             else
             {
                 await using var context = createContext();
-                // DSQL finding: Npgsql's HasTables() counts the 'sys' schema, so EnsureCreated
-                // wrongly thinks tables exist. Create the tables directly instead.
-                await context.GetService<IRelationalDatabaseCreator>().CreateTablesAsync();
+                await context.Database.EnsureCreatedResilientlyAsync();
 
                 if (_additionalSql is not null)
                 {
