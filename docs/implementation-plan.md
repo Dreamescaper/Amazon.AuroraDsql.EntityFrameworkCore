@@ -129,16 +129,41 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
       (1 DDL/tx). Migration execution is already wrapped in the execution strategy by EF's
       `Migrator`, so OCC retry applies.
 
-Deferred (added as a new task):
+## Phase 3b — Idempotent migrations (`IF NOT EXISTS` / `IF EXISTS`)
 
-- [ ] Deterministic `IF NOT EXISTS` / `IF EXISTS` idempotency for partially-applied migrations.
-      EF's `__EFMigrationsHistory` plus per-command transactions handle the normal case; partial
-      failure recovery is an edge case handled separately to keep this phase small.
+DSQL runs one DDL per transaction and has no cross-statement atomicity, so a migration that fails
+partway leaves objects behind but is not recorded in `__EFMigrationsHistory`. Re-running must skip
+what already exists. Design: [`design.md`](design.md) §6.1.
+
+Emit the keywords **in the generator**, per operation (no regex over SQL, no script splitting, no
+external tool):
+
+- [ ] Override `Generate(CreateTableOperation, ...)` → `CREATE TABLE IF NOT EXISTS` (replaces the
+      `UNLOGGED`/CockroachDB/comment handling Npgsql does; reject comments as unsupported on DSQL).
+- [ ] `Generate(CreateIndexOperation, ...)` → `CREATE [UNIQUE] INDEX ASYNC IF NOT EXISTS`
+      (DSQL: the name is required when `IF NOT EXISTS` is used — derive one when absent).
+- [ ] `Generate(AddColumnOperation, ...)` → `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+- [ ] `EnsureSchemaOperation` → `CREATE SCHEMA IF NOT EXISTS`; `CreateSequenceOperation` →
+      `CREATE SEQUENCE IF NOT EXISTS`.
+- [ ] Drops → `IF EXISTS`: `DROP TABLE`/`DROP INDEX`/`DROP COLUMN`/`DROP CONSTRAINT`/
+      `DROP SCHEMA`/`DROP SEQUENCE`.
+- [ ] `AddCheckConstraintOperation` → `NOT VALID` (FK already does).
+- [ ] Reject `AddPrimaryKeyOperation`/`AddUniqueConstraintOperation` applied via `ALTER TABLE`
+      (DSQL: `0A000 unsupported ALTER TABLE ADD CONSTRAINT statement`; see
+      [dsql-emulator#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)).
+- [ ] `DsqlMigrationCommandExecutor`: tolerate duplicate-object SQLSTATEs
+      (`42710`/`42P07`/`42701`) so `ADD CONSTRAINT` (which has no `IF NOT EXISTS`) is safe to replay;
+      log at Information and continue.
+- [ ] Unit: SQL-snapshot tests per operation; a test asserting every emitted `CREATE`/`DROP` from a
+      migration graph carries the keyword (with `ADD CONSTRAINT` documented as the exception).
+- [ ] Integration (emulator): apply a migration whose middle statement is forced to fail, then
+      re-run and assert success; plus a plain "run twice" test.
+
+**Exit:** re-running a partially-applied migration succeeds; unit snapshots cover each operation.
 
 **Exit:** `dotnet ef migrations add` produces DSQL-valid SQL; `dotnet ef database update`
 applies it against a cluster, including a re-run after a simulated partial failure. SQL generation is
-unit-verified; the end-to-end apply is verified in Phase 6 (emulator), and idempotency on partial
-failure remains deferred.
+unit-verified; the end-to-end apply is verified in Phase 6 (emulator).
 
 ## Phase 4 — Transactions and runtime SQL
 

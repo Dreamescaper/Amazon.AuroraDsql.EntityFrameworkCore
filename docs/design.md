@@ -191,6 +191,43 @@ For that branch to engage, the composed mapping must satisfy:
   `ALTER TABLE ASYNC <table> VALIDATE CONSTRAINT <name>`. FK cascading actions count toward the
   transaction row limit.
 
+## 6.1 Idempotent migrations
+
+DSQL runs one DDL statement per transaction and gives no cross-statement atomicity, so a migration
+that fails partway leaves earlier objects in place while `__EFMigrationsHistory` records nothing.
+Re-running the migration must therefore skip what already exists.
+
+The provider emits `IF NOT EXISTS` / `IF EXISTS` **in the SQL generator**, per known
+`MigrationOperation`, instead of post-processing the generated SQL:
+
+| Operation | Emitted |
+| --- | --- |
+| `CreateTableOperation` | `CREATE TABLE IF NOT EXISTS` |
+| `CreateIndexOperation` | `CREATE [UNIQUE] INDEX ASYNC IF NOT EXISTS` (name required by DSQL) |
+| `AddColumnOperation` | `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` |
+| `EnsureSchemaOperation` / `CreateSequenceOperation` | `CREATE SCHEMA`/`CREATE SEQUENCE IF NOT EXISTS` |
+| `DropTable`/`DropIndex`/`DropColumn`/`DropConstraint`/`DropSchema`/`DropSequence` | `... IF EXISTS` |
+| `AddForeignKeyOperation` / `AddCheckConstraintOperation` | `... NOT VALID` (no `IF NOT EXISTS` in PG) |
+
+`ALTER TABLE ... ADD CONSTRAINT` has no `IF NOT EXISTS` form, so the provider's
+`IMigrationCommandExecutor` additionally tolerates duplicate-object SQLSTATEs (`42710`, `42P07`,
+`42701`) while applying a migration, logging and continuing — that makes constraint additions safe
+to replay.
+
+This is deliberately **not**: regex over SQL, splitting and rejoining scripts, or shelling out to a
+tool. `IF NOT EXISTS` also does not compare definitions, so a half-created object with the wrong
+shape is skipped; that is acceptable for a resumed migration and is documented.
+
+### Comparison with `awslabs/aurora-dsql-orms`
+
+The AWS adapter (`DsqlMigrator` → `DsqlSqlTransform` → `DsqlLintRunner`) shells out to the native
+`dsql-lint` binary to fix DSQL syntax, then `DsqlSqlTransform.MakeIdempotent` **regexes** the
+generated DDL to insert `IF NOT EXISTS` after `CREATE TABLE` and `CREATE [UNIQUE] INDEX [ASYNC]`.
+It explicitly does not touch `ALTER`/`DROP` (their comment: those need manual handling if a
+migration fails partway), and it joins statements with `;` and splits them back to lint in one
+batch. Our approach covers more operations (`ADD COLUMN`, drops), avoids regex and an external
+process, and keeps each `MigrationCommand` intact.
+
 ## 7. Transactions and concurrency
 
 - DSQL has a single, fixed isolation level. Force `IsolationLevel.RepeatableRead` (Npgsql maps
