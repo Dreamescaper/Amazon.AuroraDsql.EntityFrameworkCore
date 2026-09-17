@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests.Migrations;
 
-[DbContext(typeof(EmulatorContext))]
+[DbContext(typeof(IntegrationContext))]
 [Migration("20260101000001_Owners")]
 public class OwnersMigration : Migration
 {

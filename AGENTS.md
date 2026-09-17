@@ -53,7 +53,8 @@ Record any change to these in [`docs/design.md`](docs/design.md) and in this fil
   in the solution, so it is a separate project from the main tests). It is built by its own CI job.
   See its `README.md` and `FINDINGS.md`.
 - Unit tests must not require a database.
-- Integration tests use the `dsql-emulator` container via Testcontainers.
+- Integration tests use the `dsql-emulator` container via Testcontainers by default, and the same
+  suites can run against a real cluster by setting `DSQL_CLUSTER_ENDPOINT` (+ AWS credentials).
   See [`docs/testing-with-dsql-emulator.md`](docs/testing-with-dsql-emulator.md).
 - Never assert on server version, error message text, or `sys.jobs` id format — use SQLSTATE.
 - If a test fails, classify it: our bug, emulator limitation (log it), or emulator bug

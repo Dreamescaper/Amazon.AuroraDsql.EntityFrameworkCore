@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests;
 
-[Collection(DsqlEmulatorCollection.Name)]
-public class EmulatorIntegrationTests
+[Collection(DsqlCollection.Name)]
+public class DsqlIntegrationTests
 {
-    private readonly DsqlEmulatorFixture _fixture;
+    private readonly DsqlFixture _fixture;
 
-    public EmulatorIntegrationTests(DsqlEmulatorFixture fixture)
+    public DsqlIntegrationTests(DsqlFixture fixture)
         => _fixture = fixture;
 
     [Fact]

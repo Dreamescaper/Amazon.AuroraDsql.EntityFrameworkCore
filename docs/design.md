@@ -242,9 +242,9 @@ Known DSQL limitations surfaced by porting the `efcore.pg` suite (see
 - **`xid` concurrency tokens are unsupported.** Npgsql maps `uint`/`[Timestamp]` row versions to
   the `xid` system column; DSQL has none. Use an application-managed concurrency token
   (`IsConcurrencyToken()` on a supported column) instead. The model validator rejects `xid` loudly.
-- **`EnsureCreated` is unreliable.** Npgsql's `HasTables()` counts any non-system schema, and DSQL
-  exposes the `sys` schema, so `EnsureCreated` believes tables exist and skips creation. Use
-  migrations, or call `IRelationalDatabaseCreator.CreateTablesAsync()` directly.
+- **`EnsureCreated`** works via `DsqlDatabaseCreator`: `Exists()` returns `true` (DSQL has a single
+  `postgres` database) and `HasTables()` uses `information_schema` and ignores the `sys` schema,
+  because DSQL does not expose `pg_catalog`. Migrations remain the recommended path.
 - **One database only.** Test/tenant isolation must use schemas or separate clusters; code and
   fixtures that assume `CREATE DATABASE` per tenant do not work.
 

@@ -19,9 +19,9 @@ public class Owner
     public string Name { get; set; } = string.Empty;
 }
 
-public class EmulatorContext : DbContext
+public class IntegrationContext : DbContext
 {
-    public EmulatorContext(DbContextOptions<EmulatorContext> options)
+    public IntegrationContext(DbContextOptions<IntegrationContext> options)
         : base(options)
     {
     }

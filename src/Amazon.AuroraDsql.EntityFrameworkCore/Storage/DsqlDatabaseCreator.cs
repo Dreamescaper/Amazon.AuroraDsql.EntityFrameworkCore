@@ -5,18 +5,21 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal;
 namespace Amazon.AuroraDsql.EntityFrameworkCore.Storage;
 
 /// <summary>
-/// Database creator that ignores Aurora DSQL's <c>sys</c> schema when checking whether any tables
-/// exist. Npgsql's check counts every non-system schema, so with the <c>sys</c> schema present it
-/// always reports that tables exist and <c>EnsureCreated</c> skips creating the model's tables.
+/// Database creator adapted to Aurora DSQL:
+/// <list type="bullet">
+///   <item>the single <c>postgres</c> database always exists, so <c>Exists</c> never queries
+///     <c>pg_database</c> (which DSQL does not expose);</item>
+///   <item><c>HasTables</c> uses the SQL-standard <c>information_schema</c> (not <c>pg_class</c>,
+///     also not exposed by DSQL) and ignores the <c>sys</c> schema.</item>
+/// </list>
 /// </summary>
 internal sealed class DsqlDatabaseCreator : NpgsqlDatabaseCreator
 {
     private const string HasTablesSql = """
 SELECT CASE WHEN COUNT(*) = 0 THEN FALSE ELSE TRUE END
-FROM pg_class AS cls
-JOIN pg_namespace AS ns ON ns.oid = cls.relnamespace
-WHERE cls.relkind IN ('r', 'v', 'm', 'f', 'p')
-  AND ns.nspname NOT IN ('pg_catalog', 'information_schema', 'sys')
+FROM information_schema.tables
+WHERE table_type = 'BASE TABLE'
+  AND table_schema NOT IN ('pg_catalog', 'information_schema', 'sys')
 """;
 
     private readonly INpgsqlRelationalConnection _connection;
@@ -31,6 +34,11 @@ WHERE cls.relkind IN ('r', 'v', 'm', 'f', 'p')
         _connection = connection;
         _rawSqlCommandBuilder = rawSqlCommandBuilder;
     }
+
+    public override bool Exists() => true;
+
+    public override Task<bool> ExistsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(true);
 
     public override bool HasTables()
         => Dependencies.ExecutionStrategy.Execute(

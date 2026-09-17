@@ -57,7 +57,9 @@ public class NpgsqlTestStore : RelationalTestStore
     }
 
     private static NpgsqlConnection CreateConnection(string name, string? connectionStringOptions)
-        => new(CreateConnectionString(name, connectionStringOptions));
+        // Always use the configured target's data source: the emulator uses a plain Npgsql data
+        // source, a live cluster uses the AWS connector (IAM token per physical connection).
+        => (NpgsqlConnection)TestEnvironment.DataSource.CreateConnection();
 
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task<NpgsqlTestStore> InitializeNpgsqlAsync(
@@ -132,49 +134,61 @@ public class NpgsqlTestStore : RelationalTestStore
 
     private static async Task DropAllTablesAsync()
     {
-        await using var connection = new NpgsqlConnection(CreateAdminConnectionString());
-        await connection.OpenAsync();
+        await using var connection = TestEnvironment.DataSource.OpenConnection();
 
-        // Functions first (they may reference tables), then tables.
-        var functions = new List<string>();
+        // Use the SQL-standard information_schema: real Aurora DSQL does not expose pg_catalog.
+        var tables = new List<string>();
         await using (var query = connection.CreateCommand())
         {
             query.CommandText = """
-SELECT p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')'
-FROM pg_proc AS p
-JOIN pg_namespace AS n ON n.oid = p.pronamespace
-WHERE n.nspname = 'public' AND p.prokind = 'f'
+SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_type = 'BASE TABLE'
+  AND table_schema NOT IN ('pg_catalog', 'information_schema', 'sys')
 """;
             await using var reader = await query.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                functions.Add(reader.GetString(0));
+                tables.Add($"{reader.GetString(0)}.{reader.GetString(1)}");
             }
         }
 
-        foreach (var function in functions)
-        {
-            await using var drop = connection.CreateCommand();
-            drop.CommandText = $"DROP FUNCTION IF EXISTS \"{function.Split('(')[0]}\"({function[(function.IndexOf('(') + 1)..]} CASCADE";
-            await drop.ExecuteNonQueryAsync();
-        }
-
-        var tables = new List<string>();
+        // Functions first (they may reference tables), then tables.
+        var routines = new List<string>();
         await using (var query = connection.CreateCommand())
         {
-            query.CommandText = "SELECT tablename FROM pg_tables WHERE schemaname = 'public'";
+            query.CommandText = """
+SELECT routine_schema, routine_name
+FROM information_schema.routines
+WHERE routine_schema NOT IN ('pg_catalog', 'information_schema')
+""";
             await using var reader = await query.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                tables.Add(reader.GetString(0));
+                routines.Add($"{reader.GetString(0)}.{reader.GetString(1)}");
             }
+        }
+
+        foreach (var routine in routines)
+        {
+            var (schema, name) = Split(routine);
+            await using var drop = connection.CreateCommand();
+            drop.CommandText = $"DROP ROUTINE IF EXISTS {schema}.{name} CASCADE";
+            await drop.ExecuteNonQueryAsync();
         }
 
         foreach (var table in tables)
         {
+            var (schema, name) = Split(table);
             await using var drop = connection.CreateCommand();
-            drop.CommandText = $"DROP TABLE IF EXISTS \"{table}\" CASCADE";
+            drop.CommandText = $"DROP TABLE IF EXISTS {schema}.{name} CASCADE";
             await drop.ExecuteNonQueryAsync();
+        }
+
+        static (string Schema, string Name) Split(string qualified)
+        {
+            var index = qualified.IndexOf('.');
+            return ($"\"{qualified[..index]}\"", $"\"{qualified[(index + 1)..]}\"");
         }
     }
 

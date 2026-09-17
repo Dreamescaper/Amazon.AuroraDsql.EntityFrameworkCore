@@ -1,0 +1,65 @@
+name: Live tests
+
+# Manual only: runs the suites against a real Aurora DSQL cluster. Requires a "live" environment
+# with DSQL_CLUSTER_ENDPOINT and AWS credentials as secrets (or OIDC). Never runs on PRs.
+#
+# WARNING: the suites migrate the cluster and the compatibility harness drops every table in
+# non-system schemas at startup. Point this at a throwaway cluster.
+on:
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    environment: live
+    env:
+      DSQL_CLUSTER_ENDPOINT: ${{ secrets.DSQL_CLUSTER_ENDPOINT }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Require a cluster endpoint
+        run: |
+          if [ -z "$DSQL_CLUSTER_ENDPOINT" ]; then
+            echo "::error::Set the DSQL_CLUSTER_ENDPOINT secret on the 'live' environment."
+            exit 1
+          fi
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Integration suite (live)
+        run: >
+          dotnet test tests/Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests
+          --no-build -c Release
+          --logger "trx;LogFileName=live-integration.trx"
+          --results-directory TestResults
+
+      - name: Build compatibility harness
+        run: dotnet build compat/efcorepg-functional/DsqlEfcorePgFunctionalTests.csproj -c Release
+
+      - name: Compatibility harness (live, curated subset)
+        run: |
+          for filter in FindNpgsqlTest NorthwindWhereQueryNpgsqlTest NorthwindMiscellaneousQueryNpgsqlTest; do
+            dotnet test compat/efcorepg-functional/DsqlEfcorePgFunctionalTests.csproj \
+              --no-build -c Release \
+              --filter "FullyQualifiedName~.$filter" \
+              --logger "trx;LogFileName=live-$filter.trx" \
+              --results-directory TestResults
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-test-results
+          path: TestResults

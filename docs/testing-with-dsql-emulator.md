@@ -122,13 +122,43 @@ timing-sensitive case.
 - Runs integration tests in a Docker-enabled job; pin the emulator image tag.
 - Live-cluster tests are excluded from PR CI and run manually/nightly with credentials.
 
-## Live cluster tests
+## Running the same suites against a real cluster
 
-Keep a small smoke suite against a real cluster to catch emulator drift and to exercise IAM auth
-through `Amazon.AuroraDsql.Npgsql`:
+Both suites are target-agnostic: they use the emulator by default and switch to a live cluster when
+an endpoint is configured. The live path uses the `Amazon.AuroraDsql.Npgsql` connector, so IAM auth,
+token refresh and `VerifyFull` TLS are handled for you.
 
 ```bash
-export CLUSTER_ENDPOINT=your-cluster.dsql.us-east-1.on.aws
-export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
-dotnet test --filter Category=Live
+export DSQL_CLUSTER_ENDPOINT=your-cluster.dsql.us-east-1.on.aws   # CLUSTER_ENDPOINT also works
+export AWS_REGION=us-east-1            # optional; auto-detected from the endpoint
+export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...   # or a profile / role (SDK default chain)
 ```
+
+Main integration suite (migrations, CRUD, jsonb, FKs, transactions):
+
+```bash
+dotnet test tests/Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests
+```
+
+efcore.pg compatibility harness (one class at a time — DSQL has a single database):
+
+```bash
+cd compat/efcorepg-functional
+dotnet test --filter "FullyQualifiedName~.FindNpgsqlTest"
+dotnet test --filter "FullyQualifiedName~.NorthwindWhereQueryNpgsqlTest"
+```
+
+Notes and caveats for live runs:
+
+- **Migrations are applied to the cluster** and left in place (no `DROP DATABASE`). Re-runs are
+  idempotent via `__EFMigrationsHistory`. Use a dedicated dev/test cluster.
+- The harness **drops every table in non-system schemas** at store init, so do not point it at a
+  cluster with data you care about.
+- Provider support for catalog access: `DsqlDatabaseCreator.Exists()` returns `true` (DSQL has a
+  single `postgres` database) and `HasTables()` uses `information_schema`, because DSQL does not
+  expose `pg_catalog`. The harness's reset queries use `information_schema` for the same reason.
+- AWS credentials and a reachable cluster are required; without the endpoint env vars the emulator
+  path is used and nothing external is contacted.
+
+CI runs live tests only via the manual **Live tests** workflow
+(`.github/workflows/live.yml`); PR CI never touches a cluster.

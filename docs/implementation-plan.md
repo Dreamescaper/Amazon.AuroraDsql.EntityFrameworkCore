@@ -178,8 +178,9 @@ conflict against a live/emulated conflict is verified in Phase 6.
       conflict injection needs a custom ruleset it does not expose; see
       [`dsql-emulator-issues.md`](dsql-emulator-issues.md)), 3,000-row cap, batch `SaveChanges`
       limits.
-- [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
-      drift and cover IAM auth.
+- [x] Both suites can target a real cluster (env: `DSQL_CLUSTER_ENDPOINT` + AWS creds), using the
+      connector for IAM auth. Explicitly run via the manual **Live tests** workflow; PR CI stays on
+      the emulator. Only execution against a real cluster remains to be exercised by the maintainer.
 - [x] Port/execute a representative subset of the `efcore.pg` functional test suite.
       Harness lives in [`compat/efcorepg-functional/`](../compat/efcorepg-functional) (not in the
       solution; reuses efcore.pg's test utilities with the public type names so test files copy

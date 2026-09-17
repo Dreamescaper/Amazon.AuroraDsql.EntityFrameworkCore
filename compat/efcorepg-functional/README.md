@@ -23,14 +23,27 @@ Because the type names and namespaces match, copied test files compile without e
 
 ## Running
 
+Emulator (default):
+
 ```bash
-# start the emulator
 docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.1.1
 
 export DSQL_TEST_CONNECTION="Host=127.0.0.1;Port=55432;Username=admin;Password=token;Database=postgres;SSL Mode=Require;Pooling=false"
 
 dotnet test --filter "FullyQualifiedName~FindNpgsqlTest"
 ```
+
+Real Aurora DSQL cluster (IAM auth via the `Amazon.AuroraDsql.Npgsql` connector):
+
+```bash
+export DSQL_CLUSTER_ENDPOINT=your-cluster.dsql.us-east-1.on.aws   # CLUSTER_ENDPOINT also works
+export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...           # or a profile / role
+
+dotnet test --filter "FullyQualifiedName~FindNpgsqlTest"
+```
+
+The store drops every table in non-system schemas at init, so use a throwaway cluster. Run one
+test class per invocation (`DSQL_CLUSTER_ENDPOINT` / `DSQL_TEST_CONNECTION` choose the target).
 
 ## Ported so far
 

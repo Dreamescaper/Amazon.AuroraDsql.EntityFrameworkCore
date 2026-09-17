@@ -34,6 +34,15 @@ public class DsqlTransactionServicesTests : IDisposable
     }
 
     [Fact]
+    public void Database_always_exists_without_a_connection()
+    {
+        using var context = CreateContext();
+
+        // DSQL's single database always exists; this must not hit pg_database.
+        Assert.True(context.GetService<IRelationalDatabaseCreator>().Exists());
+    }
+
+    [Fact]
     public void Database_creator_is_dsql_creator()
     {
         using var context = CreateContext();
