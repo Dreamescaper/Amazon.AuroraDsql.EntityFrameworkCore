@@ -39,6 +39,18 @@ public class DsqlHistoryRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void Create_if_not_exists_script_is_idempotent_once()
+    {
+        using var context = CreateContext();
+        var repository = context.GetService<IHistoryRepository>();
+
+        var script = repository.GetCreateIfNotExistsScript();
+
+        Assert.Contains("CREATE TABLE IF NOT EXISTS", script);
+        Assert.DoesNotContain("IF NOT EXISTS IF NOT EXISTS", script);
+    }
+
+    [Fact]
     public void Create_script_has_no_lock_table()
     {
         using var context = CreateContext();

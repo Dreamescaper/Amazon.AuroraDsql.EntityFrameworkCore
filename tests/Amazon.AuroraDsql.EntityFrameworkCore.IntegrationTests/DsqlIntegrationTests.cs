@@ -1,6 +1,9 @@
 using Amazon.AuroraDsql.EntityFrameworkCore.Extensions;
-using Npgsql;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Npgsql;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests;
 
@@ -187,5 +190,79 @@ public class DsqlIntegrationTests
 
         await using var verify = _fixture.CreateContext();
         Assert.True(await verify.Widgets.AnyAsync(w => w.Id == id));
+    }
+
+    [Fact]
+    public async Task Generated_migration_ddl_is_idempotent()
+    {
+        await using var context = _fixture.CreateContext();
+        var generator = context.GetService<IMigrationsSqlGenerator>();
+
+        MigrationOperation[] Operations() =>
+        [
+            new CreateTableOperation
+            {
+                Name = "Idempotent",
+                Columns =
+                {
+                    new AddColumnOperation
+                    {
+                        Name = "Id",
+                        Table = "Idempotent",
+                        ClrType = typeof(Guid),
+                        ColumnType = "uuid",
+                        IsNullable = false,
+                    },
+                },
+                PrimaryKey = new AddPrimaryKeyOperation
+                {
+                    Name = "PK_Idempotent",
+                    Table = "Idempotent",
+                    Columns = ["Id"],
+                },
+            },
+            new CreateIndexOperation
+            {
+                Name = "IX_Idempotent_Id",
+                Table = "Idempotent",
+                Columns = ["Id"],
+            },
+            new AddColumnOperation
+            {
+                Name = "Name",
+                Table = "Idempotent",
+                ClrType = typeof(string),
+                ColumnType = "text",
+                IsNullable = true,
+            },
+        ];
+
+        var commands = generator.Generate(Operations(), context.Model)
+            .Select(c => c.CommandText)
+            .ToList();
+
+        await using var connection = await _fixture.DataSource.OpenConnectionAsync();
+
+        // Start from a clean slate, then apply the same DDL twice: the second run must not fail on
+        // already-created objects.
+        await using (var drop = connection.CreateCommand())
+        {
+            drop.CommandText = "DROP TABLE IF EXISTS \"Idempotent\"";
+            await drop.ExecuteNonQueryAsync();
+        }
+
+        for (var run = 0; run < 2; run++)
+        {
+            foreach (var sql in commands)
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = sql;
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        await using var cleanup = connection.CreateCommand();
+        cleanup.CommandText = "DROP TABLE IF EXISTS \"Idempotent\"";
+        await cleanup.ExecuteNonQueryAsync();
     }
 }

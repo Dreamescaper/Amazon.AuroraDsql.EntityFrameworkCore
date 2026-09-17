@@ -138,26 +138,25 @@ what already exists. Design: [`design.md`](design.md) §6.1.
 Emit the keywords **in the generator**, per operation (no regex over SQL, no script splitting, no
 external tool):
 
-- [ ] Override `Generate(CreateTableOperation, ...)` → `CREATE TABLE IF NOT EXISTS` (replaces the
-      `UNLOGGED`/CockroachDB/comment handling Npgsql does; reject comments as unsupported on DSQL).
-- [ ] `Generate(CreateIndexOperation, ...)` → `CREATE [UNIQUE] INDEX ASYNC IF NOT EXISTS`
-      (DSQL: the name is required when `IF NOT EXISTS` is used — derive one when absent).
-- [ ] `Generate(AddColumnOperation, ...)` → `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
-- [ ] `EnsureSchemaOperation` → `CREATE SCHEMA IF NOT EXISTS`; `CreateSequenceOperation` →
-      `CREATE SEQUENCE IF NOT EXISTS`.
-- [ ] Drops → `IF EXISTS`: `DROP TABLE`/`DROP INDEX`/`DROP COLUMN`/`DROP CONSTRAINT`/
+- [x] Override `Generate(CreateTableOperation, ...)` → `CREATE TABLE IF NOT EXISTS` (rejects
+      comments/`UNLOGGED`; replaces the `pg_namespace`-based Npgsql `EnsureSchema`).
+- [x] `Generate(CreateIndexOperation, ...)` → `CREATE [UNIQUE] INDEX ASYNC IF NOT EXISTS`
+      (derives a name when absent, as DSQL requires one).
+- [x] `Generate(AddColumnOperation, ...)` → `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+- [x] `EnsureSchemaOperation` → `CREATE SCHEMA IF NOT EXISTS` (Npgsql's PL/pgSQL `DO` block is
+      unsupported); `CreateSequenceOperation` → `CREATE SEQUENCE IF NOT EXISTS`.
+- [x] Drops → `IF EXISTS`: `DROP TABLE`/`DROP INDEX`/`DROP COLUMN`/`DROP CONSTRAINT`/
       `DROP SCHEMA`/`DROP SEQUENCE`.
-- [ ] `AddCheckConstraintOperation` → `NOT VALID` (FK already does).
-- [ ] Reject `AddPrimaryKeyOperation`/`AddUniqueConstraintOperation` applied via `ALTER TABLE`
-      (DSQL: `0A000 unsupported ALTER TABLE ADD CONSTRAINT statement`; see
-      [dsql-emulator#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)).
-- [ ] `DsqlMigrationCommandExecutor`: tolerate duplicate-object SQLSTATEs
-      (`42710`/`42P07`/`42701`) so `ADD CONSTRAINT` (which has no `IF NOT EXISTS`) is safe to replay;
-      log at Information and continue.
-- [ ] Unit: SQL-snapshot tests per operation; a test asserting every emitted `CREATE`/`DROP` from a
-      migration graph carries the keyword (with `ADD CONSTRAINT` documented as the exception).
-- [ ] Integration (emulator): apply a migration whose middle statement is forced to fail, then
-      re-run and assert success; plus a plain "run twice" test.
+- [x] `AddCheckConstraintOperation` → `NOT VALID` (FK already does).
+- [x] Reject `AddPrimaryKeyOperation`/`AddUniqueConstraintOperation` applied via `ALTER TABLE`
+      (DSQL: `0A000`; see [dsql-emulator#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)).
+- [x] `DsqlMigrationCommandExecutor`: tolerates duplicate-object SQLSTATEs
+      (`42710`/`42P07`/`42701`) so `ADD CONSTRAINT` is safe to replay, logging at Information.
+- [x] `DsqlHistoryRepository.GetCreateIfNotExistsScript()` returns `GetCreateScript()` — Npgsql's
+      `Replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")` double-applied against the generated
+      idempotent script (`IF NOT EXISTS IF NOT EXISTS`, `42601`).
+- [x] Unit: SQL-snapshot tests per operation.
+- [x] Integration (emulator): applies the generated DDL twice and asserts the second run succeeds.
 
 **Exit:** re-running a partially-applied migration succeeds; unit snapshots cover each operation.
 

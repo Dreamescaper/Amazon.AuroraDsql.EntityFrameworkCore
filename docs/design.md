@@ -214,6 +214,10 @@ The provider emits `IF NOT EXISTS` / `IF EXISTS` **in the SQL generator**, per k
 `42701`) while applying a migration, logging and continuing — that makes constraint additions safe
 to replay.
 
+One interaction to note: the Npgsql history repository implements "create if not exists" as
+`script.Replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")`, so `DsqlHistoryRepository` returns the
+generator's already-idempotent script unchanged (otherwise the keyword is applied twice).
+
 This is deliberately **not**: regex over SQL, splitting and rejoining scripts, or shelling out to a
 tool. `IF NOT EXISTS` also does not compare definitions, so a half-created object with the wrong
 shape is skipped; that is acceptable for a resumed migration and is documented.

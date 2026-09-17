@@ -1,6 +1,8 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
 
@@ -13,6 +15,15 @@ namespace Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
 /// </remarks>
 internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
 {
+    // Statements that have no IF NOT EXISTS form (ADD CONSTRAINT) still run against an object a
+    // previous, partially-applied run created; treat the duplicate as already applied.
+    private static readonly string[] AlreadyAppliedSqlStates = ["42710", "42P07", "42701"];
+
+    private readonly ILogger _logger;
+
+    public DsqlMigrationCommandExecutor(ILoggerFactory loggerFactory)
+        => _logger = loggerFactory.CreateLogger<DsqlMigrationCommandExecutor>();
+
     public void ExecuteNonQuery(
         IEnumerable<MigrationCommand> migrationCommands,
         IRelationalConnection connection)
@@ -66,7 +77,16 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
         }
     }
 
-    private static int Execute(
+    private static bool AlreadyApplied(PostgresException exception)
+        => AlreadyAppliedSqlStates.Contains(exception.SqlState);
+
+    private void LogAlreadyApplied(PostgresException exception)
+        => _logger.LogInformation(
+            "Ignoring already-applied migration statement (SQLSTATE {SqlState}): {Message}",
+            exception.SqlState,
+            exception.MessageText);
+
+    private int Execute(
         IReadOnlyList<MigrationCommand> commands,
         IRelationalConnection connection,
         MigrationExecutionState executionState)
@@ -79,7 +99,15 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
         {
             for (var i = executionState.LastCommittedCommandIndex; i < commands.Count; i++)
             {
-                result = commands[i].ExecuteNonQuery(connection);
+                try
+                {
+                    result = commands[i].ExecuteNonQuery(connection);
+                }
+                catch (PostgresException exception) when (AlreadyApplied(exception))
+                {
+                    LogAlreadyApplied(exception);
+                }
+
                 executionState.LastCommittedCommandIndex = i + 1;
                 executionState.AnyOperationPerformed = true;
             }
@@ -95,7 +123,7 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
         return result;
     }
 
-    private static async Task<int> ExecuteAsync(
+    private async Task<int> ExecuteAsync(
         IReadOnlyList<MigrationCommand> commands,
         IRelationalConnection connection,
         MigrationExecutionState executionState,
@@ -109,8 +137,16 @@ internal sealed class DsqlMigrationCommandExecutor : IMigrationCommandExecutor
         {
             for (var i = executionState.LastCommittedCommandIndex; i < commands.Count; i++)
             {
-                result = await commands[i].ExecuteNonQueryAsync(connection, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                try
+                {
+                    result = await commands[i].ExecuteNonQueryAsync(connection, cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (PostgresException exception) when (AlreadyApplied(exception))
+                {
+                    LogAlreadyApplied(exception);
+                }
+
                 executionState.LastCommittedCommandIndex = i + 1;
                 executionState.AnyOperationPerformed = true;
             }

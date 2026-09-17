@@ -20,6 +20,10 @@ internal sealed class DsqlHistoryRepository : NpgsqlHistoryRepository
 
     public override LockReleaseBehavior LockReleaseBehavior => LockReleaseBehavior.Explicit;
 
+    // The Npgsql implementation does script.Replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"),
+    // which double-applies now that the generator already emits idempotent CREATE TABLE.
+    public override string GetCreateIfNotExistsScript() => GetCreateScript();
+
     public override IMigrationsDatabaseLock AcquireDatabaseLock()
         => new NoopDatabaseLock(this);
 

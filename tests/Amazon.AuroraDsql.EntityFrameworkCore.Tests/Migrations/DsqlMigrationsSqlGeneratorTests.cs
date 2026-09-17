@@ -208,6 +208,131 @@ public class DsqlMigrationsSqlGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void Create_table_is_idempotent()
+    {
+        using var context = CreateContext();
+
+        var sql = string.Join("\n", Generate(context, IdentityTable()).Select(c => c.CommandText));
+
+        Assert.Contains("CREATE TABLE IF NOT EXISTS", sql);
+    }
+
+    [Fact]
+    public void Create_index_is_idempotent()
+    {
+        using var context = CreateContext();
+
+        var commands = Generate(
+            context,
+            new CreateIndexOperation { Name = "IX_Widgets_Name", Table = "Widgets", Columns = ["Name"] });
+
+        Assert.Contains("CREATE INDEX ASYNC IF NOT EXISTS", string.Join("\n", commands.Select(c => c.CommandText)));
+    }
+
+    [Fact]
+    public void Add_column_is_idempotent()
+    {
+        using var context = CreateContext();
+
+        var commands = Generate(
+            context,
+            new AddColumnOperation
+            {
+                Name = "Extra",
+                Table = "Widgets",
+                ClrType = typeof(string),
+                ColumnType = "text",
+                IsNullable = true,
+            });
+
+        Assert.Contains("ADD COLUMN IF NOT EXISTS", string.Join("\n", commands.Select(c => c.CommandText)));
+    }
+
+    [Fact]
+    public void Drops_are_idempotent()
+    {
+        using var context = CreateContext();
+
+        var drops = string.Join(
+            "\n",
+            Generate(context, new DropTableOperation { Name = "Widgets" }).Select(c => c.CommandText));
+        Assert.Contains("DROP TABLE IF EXISTS", drops);
+
+        drops = string.Join(
+            "\n",
+            Generate(context, new DropIndexOperation { Name = "IX_Widgets_Name", Table = "Widgets" })
+                .Select(c => c.CommandText));
+        Assert.Contains("DROP INDEX IF EXISTS", drops);
+
+        drops = string.Join(
+            "\n",
+            Generate(context, new DropColumnOperation { Name = "Quantity", Table = "Widgets" })
+                .Select(c => c.CommandText));
+        Assert.Contains("DROP COLUMN IF EXISTS", drops);
+
+        drops = string.Join(
+            "\n",
+            Generate(context, new DropForeignKeyOperation { Name = "FK_Widgets_Owners_OwnerId", Table = "Widgets" })
+                .Select(c => c.CommandText));
+        Assert.Contains("DROP CONSTRAINT IF EXISTS", drops);
+    }
+
+    [Fact]
+    public void Create_schema_is_idempotent()
+    {
+        using var context = CreateContext();
+
+        var commands = Generate(context, new EnsureSchemaOperation { Name = "myschema" });
+
+        Assert.Contains("CREATE SCHEMA IF NOT EXISTS", string.Join("\n", commands.Select(c => c.CommandText)));
+    }
+
+    [Fact]
+    public void Add_check_constraint_is_not_valid()
+    {
+        using var context = CreateContext();
+
+        var commands = Generate(
+            context,
+            new AddCheckConstraintOperation
+            {
+                Name = "CK_Widgets_Quantity",
+                Table = "Widgets",
+                Sql = "\"Quantity\" >= 0",
+            });
+
+        Assert.Contains("NOT VALID", string.Join("\n", commands.Select(c => c.CommandText)));
+    }
+
+    [Fact]
+    public void Add_primary_key_to_existing_table_is_rejected()
+    {
+        using var context = CreateContext();
+
+        var operation = new AddPrimaryKeyOperation
+        {
+            Name = "PK_Widgets",
+            Table = "Widgets",
+            Columns = ["Id"],
+        };
+
+        var exception = Assert.Throws<InvalidOperationException>(() => Generate(context, operation));
+        Assert.Contains("PRIMARY KEY", exception.Message);
+    }
+
+    [Fact]
+    public void Table_comment_is_rejected()
+    {
+        using var context = CreateContext();
+
+        var operation = IdentityTable();
+        operation.Comment = "widgets";
+
+        var exception = Assert.Throws<InvalidOperationException>(() => Generate(context, operation));
+        Assert.Contains("comment", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Concurrent_index_is_rejected()
     {
         using var context = CreateContext();
