@@ -196,6 +196,22 @@ conflict against a live/emulated conflict is verified in Phase 6.
             works on DSQL (validated by the ported `FindNpgsqlTest` suite via the standard
             `EnsureCreated` path).
       - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
+      - [ ] Expose null-ordering (efcore.pg's `ReverseNullOrdering`, internal) or default to
+            `NULLS FIRST`; without it ~9 ordering-sensitive spec tests fail. DSQL supports
+            `NULLS FIRST`/`LAST`.
+      - [ ] Inline primitive-collection parameters: with collections mapped to `jsonb`,
+            `Contains` over an inline array parameter translates to PostgreSQL array operators
+            against a jsonb parameter (`op ANY/ALL (array) requires array on right side`,
+            `operator does not exist: character = jsonb`). DSQL supports arrays at query runtime,
+            so parameters may need to stay native arrays (only stored columns must be jsonb).
+
+      Northwind: the suite's `Northwind.sql` was adapted for DSQL on the branch
+      ([`compat/efcorepg-functional/tools/adapt_northwind.py`](https://github.com/Dreamescaper/Amazon.AuroraDsql.EntityFrameworkCore/blob/efcorepg-functional-suite/compat/efcorepg-functional/tools/adapt_northwind.py)):
+      `SERIAL`→identity `CACHE 1`, sync `CREATE INDEX`→`ASYNC`, views materialised as tables,
+      foreign keys deferred to after the data load (`NOT VALID` + async validate), extensions and
+      trigger toggles removed. With that, the Northwind query suites pass ~2,900 tests
+      (Where 421, Miscellaneous 962, GroupBy 509, EFPropertyInclude 238, Include 236+236,
+      SetOperations 192, Navigations 146, …); only 8 inline-array-parameter tests fail (above).
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.
