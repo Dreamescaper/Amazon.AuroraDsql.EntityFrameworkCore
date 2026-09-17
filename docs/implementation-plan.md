@@ -208,10 +208,16 @@ conflict against a live/emulated conflict is verified in Phase 6.
             `CompositeKeys` 14/14, `FunkyData` 42/42, `Character` 4/4, `Navigation` 2/2,
             `AdHocMiscellaneous` 65/71, `AdHocNavigations` 24/25. See
             [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md).
-      - [ ] Run the Northwind suites live (needs a credentials-based window; a 15-minute token is too
-            short for the 1 MB script load).
+      - [ ] Run the Northwind suites live. The adapted script is DSQL-valid and now only ~56
+            statements (batched inserts, full data), so it loads in seconds; blocked only on
+            credentials that outlast a single role session (a token's `--expires-in` does not
+            outlive the assumed role).
       - [ ] Investigate `0A000: ddl and dml are not supported in the same transaction` seen live in
             `AdHocMiscellaneousQueryNpgsqlTest` (emulator does not enforce it for the setup path).
+      - [x] Handle DSQL schema-version conflicts (`OC001`) during bulk DDL+DML loads by retrying
+            `40001` per statement (harness); the emulator does not reproduce them.
+      - [x] Fold `ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY` into `CREATE TABLE` for DSQL
+            ([dsql-emulator#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
       - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with an EF expression-type error; investigate or document as unsupported.

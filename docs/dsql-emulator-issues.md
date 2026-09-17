@@ -84,6 +84,26 @@ Entry template:
 - **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/2
 - **See also:** [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md)
 
+### Accepts `ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY` (DSQL rejects it)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
+- **Type:** bug (accepts DDL real DSQL rejects)
+- **Impact on us:** a schema script that adds primary keys with `ALTER TABLE` loads on the emulator
+  and fails partway through on a real cluster (`0A000: unsupported ALTER TABLE ADD CONSTRAINT
+  statement`). Found by running the Northwind load live.
+- **Fix (ours):** the adapter folds such primary keys into `CREATE TABLE`.
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/3
+
+### Does not reproduce DSQL's schema-version conflicts (`OC001`)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
+- **Type:** limitation
+- **Impact on us:** live, a DML statement that runs while a schema change is in flight fails with
+  `40001: schema has been updated by another transaction (OC001)`; the single-node emulator is
+  synchronous and never does. Emulator-backed scripts therefore need no retry, while live ones do.
+- **Fix (ours):** the harness retries `40001` per statement.
+- **Upstream:** not filed (hard to emulate without a distributed schema version).
+
 ## Known limitations relevant to our tests
 
 Source: emulator README "What it does not do" (as of the pinned `v0.2.1`). These are documented

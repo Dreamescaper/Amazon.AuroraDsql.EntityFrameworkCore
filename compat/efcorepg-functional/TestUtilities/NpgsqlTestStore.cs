@@ -229,22 +229,41 @@ WHERE routine_schema NOT IN ('pg_catalog', 'information_schema', 'sys')
         var script = File.ReadAllText(scriptPath);
         var batches = new Regex("^GO", RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromMilliseconds(1000.0))
             .Split(script).Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
+
         Connection.Open();
         try
         {
             foreach (var batch in batches)
             {
-                using var command = Connection.CreateCommand();
-                command.CommandText = batch;
-                command.CommandTimeout = CommandTimeout;
-                command.ExecuteNonQuery();
+                ExecuteBatchWithRetry(batch);
             }
         }
         finally
         {
             Connection.Close();
         }
+    }
 
+    // Real DSQL reports 40001 (schema-changed and change-conflict) for statements that a
+    // single-node emulator executes without contention; retry as the DSQL docs advise.
+    private void ExecuteBatchWithRetry(string batch)
+    {
+        const int maxAttempts = 30;
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                using var command = Connection.CreateCommand();
+                command.CommandText = batch;
+                command.CommandTimeout = CommandTimeout;
+                command.ExecuteNonQuery();
+                return;
+            }
+            catch (PostgresException ex) when (ex.SqlState == "40001" && attempt < maxAttempts)
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(Math.Min(2000, 100 * (attempt + 1))));
+            }
+        }
     }
 
     private static string GetCreateDatabaseStatement(string name)
