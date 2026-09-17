@@ -26,6 +26,30 @@ internal sealed class DsqlModelValidator : NpgsqlModelValidator
         "json", "jsonb", "bytea", "time with time zone", "interval",
     };
 
+    // PostgreSQL type aliases map onto a supported canonical type.
+    private static readonly Dictionary<string, string> StoreTypeAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["int"] = "integer",
+        ["int4"] = "integer",
+        ["int2"] = "smallint",
+        ["int8"] = "bigint",
+        ["float4"] = "real",
+        ["float8"] = "double precision",
+        ["float"] = "double precision",
+        ["decimal"] = "numeric",
+        ["dec"] = "numeric",
+        ["bool"] = "boolean",
+        ["varchar"] = "character varying",
+        ["char"] = "character",
+        ["timestamptz"] = "timestamp with time zone",
+        ["timetz"] = "time with time zone",
+        ["timestamp"] = "timestamp without time zone",
+        ["time"] = "time without time zone",
+    };
+
+    private static string NormalizeStoreType(string storeType)
+        => StoreTypeAliases.TryGetValue(storeType, out var canonical) ? canonical : storeType;
+
     public DsqlModelValidator(
         ModelValidatorDependencies dependencies,
         RelationalModelValidatorDependencies relationalDependencies,
@@ -63,7 +87,7 @@ internal sealed class DsqlModelValidator : NpgsqlModelValidator
             foreach (var property in entityType.GetDeclaredProperties())
             {
                 var storeType = property.GetRelationalTypeMapping().StoreTypeNameBase;
-                if (!SupportedStoreTypes.Contains(storeType))
+                if (!SupportedStoreTypes.Contains(NormalizeStoreType(storeType)))
                 {
                     throw new InvalidOperationException(
                         $"Aurora DSQL does not support the column type '{storeType}' used by "
@@ -83,7 +107,7 @@ internal sealed class DsqlModelValidator : NpgsqlModelValidator
                 foreach (var property in index.Properties)
                 {
                     var storeType = property.GetRelationalTypeMapping().StoreTypeNameBase;
-                    if (NonIndexableStoreTypes.Contains(storeType))
+                    if (NonIndexableStoreTypes.Contains(NormalizeStoreType(storeType)))
                     {
                         throw new InvalidOperationException(
                             $"Aurora DSQL cannot index columns of type '{storeType}' "
