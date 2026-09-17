@@ -62,6 +62,8 @@ Decisions referenced by this plan:
       Action<...>)` overloads and generic `DbContextOptionsBuilder<TContext>` variants.
 - [x] Pass the data source directly to `UseNpgsql(...)`; `NpgsqlConnection`/`NpgsqlCommand`
       identity preserved.
+- [x] `AddEntityFrameworkDsql(IServiceCollection)` so the overrides also apply when EF uses an
+      external/internal service provider (`ApplyServices` is skipped in that case).
 
 Decisions:
 
@@ -178,7 +180,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
       limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
-- [ ] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
+- [~] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
+      In progress on branch `efcorepg-functional-suite` (a scratch harness that reuses efcore.pg's
+      test utilities with the public type names so test files copy unchanged). Findings are
+      recorded there. This surfaced the need for `AddEntityFrameworkDsql` (see Phase 1).
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.

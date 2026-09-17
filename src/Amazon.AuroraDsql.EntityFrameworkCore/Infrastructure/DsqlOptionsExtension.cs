@@ -1,13 +1,6 @@
-using Amazon.AuroraDsql.EntityFrameworkCore.Metadata;
-using Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
-using Amazon.AuroraDsql.EntityFrameworkCore.Storage;
+using Amazon.AuroraDsql.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.Infrastructure;
 
@@ -50,15 +43,8 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
     public void ApplyServices(IServiceCollection services)
     {
         // This extension is applied after NpgsqlOptionsExtension, so Replace(...) calls win.
-        services.TryAddEnumerable(
-            ServiceDescriptor.Scoped<IConventionSetPlugin, DsqlConventionSetPlugin>());
-        services.Replace(ServiceDescriptor.Scoped<IModelValidator, DsqlModelValidator>());
-        services.Replace(ServiceDescriptor.Scoped<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
-        services.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
-        services.Replace(ServiceDescriptor.Scoped<IHistoryRepository, DsqlHistoryRepository>());
-        services.Replace(ServiceDescriptor.Scoped<IMigrationCommandExecutor, DsqlMigrationCommandExecutor>());
-        services.Replace(ServiceDescriptor.Scoped<INpgsqlRelationalConnection, DsqlRelationalConnection>());
-        services.Replace(ServiceDescriptor.Singleton<IRelationalTransactionFactory, DsqlRelationalTransactionFactory>());
+        // The same registrations are available via AddEntityFrameworkDsql for external providers.
+        services.AddEntityFrameworkDsql();
     }
 
     public void Validate(IDbContextOptions options)
