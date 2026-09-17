@@ -218,6 +218,13 @@ conflict against a live/emulated conflict is verified in Phase 6.
             `40001` per statement (harness); the emulator does not reproduce them.
       - [x] Fold `ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY` into `CREATE TABLE` for DSQL
             ([dsql-emulator#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)).
+      - [x] Live Northwind pass (Where, Miscellaneous, SetOperations, AggregateOperators): 1,983/1,998
+            (`SetOperations` and `AggregateOperators` fully pass). Differences:
+            composite types ([dsql-emulator#4](https://github.com/Dreamescaper/dsql-emulator/issues/4)),
+            `Skip`/`Take` collection projection row selection, and `Where_contains_on_navigation`
+            exhausting OCC retries with read timeouts.
+      - [ ] Investigate `Skip`/`Take` collection projections live (ordering vs translation).
+      - [ ] Investigate `Where_contains_on_navigation` live (slow query → OCC retry/timeout).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
       - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with an EF expression-type error; investigate or document as unsupported.

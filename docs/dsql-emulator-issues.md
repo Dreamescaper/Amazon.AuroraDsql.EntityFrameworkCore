@@ -104,6 +104,16 @@ Entry template:
 - **Fix (ours):** the harness retries `40001` per statement.
 - **Upstream:** not filed (hard to emulate without a distributed schema version).
 
+### Supports composite/row types (DSQL rejects them, `42804`)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
+- **Type:** bug (accepts values real DSQL cannot represent)
+- **Impact on us:** `NorthwindMiscellaneousQueryNpgsqlTest.Complex_nested_query...` passes on the
+  emulator and fails on a real cluster with
+  `42804: attribute 1 of type "Orders" has wrong type` (DSQL has no composite types).
+- **Fix (ours):** none; the test is not expressible on DSQL as generated.
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/4
+
 ## Known limitations relevant to our tests
 
 Source: emulator README "What it does not do" (as of the pinned `v0.2.1`). These are documented

@@ -58,8 +58,10 @@ fit the 15-minute token window; they are pending a credentials-based run.
 | `NavigationTest` | 2/2 | **2/2** |
 | `AdHocMiscellaneousQueryNpgsqlTest` | 69/71 (2 skipped) | **65/71** (4 failed, 2 skipped)² |
 | `AdHocNavigationsQueryNpgsqlTest` | 24/25 | **24/25** (1 failed)³ |
-| `NorthwindWhereQueryNpgsqlTest` | 417/421 | pending credentials |
-| `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 | pending credentials |
+| `NorthwindWhereQueryNpgsqlTest` | 417/421 | 415/421 |
+| `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 (0 failed) | 954/963 (8 failed) |
+| `NorthwindSetOperationsQueryNpgsqlTest` | 192/192 | 192/192 |
+| `NorthwindAggregateOperatorsQueryNpgsqlTest` | 422/422 | 422/422 |
 
 ¹ Failed once with a transient `40001`, passed on retry — see below.
 ² `0A000: ddl and dml are not supported in the same transaction` and `40001` conflicts — see below.
@@ -149,6 +151,27 @@ under the spec fixture) and either make the provider separate them or document t
 initialisation (drop/create) and passed on a re-run. Worth understanding whether the store reset
 pattern (many `DROP TABLE` statements) can collide on a real cluster, and whether the OCC execution
 strategy should cover migration/setup commands.
+
+### DSQL has no composite/row types (`42804`)
+
+`NorthwindMiscellaneousQueryNpgsqlTest.Complex_nested_query...` (2 tests) fails with
+`42804: attribute 1 of type "Orders" has wrong type`. DSQL does not support `CREATE TYPE`/composite
+types; the emulator's PostgreSQL does. Filed upstream as
+[dsql-emulator#4](https://github.com/Dreamescaper/dsql-emulator/issues/4).
+
+### `Skip`/`Take` collection projections pick different rows (6)
+
+`Projection_skip_collection_projection`, `Projection_take_collection_projection` and
+`Projection_skip_take_collection_projection` fail live with `Assert.Equal` count mismatches (e.g.
+expected 31, actual 39) while passing on the emulator. Likely a difference in `ORDER BY`/`LIMIT` row
+selection when the ordering is not fully deterministic; open — confirm whether it is ordering, data,
+or a translation difference.
+
+### `Where_contains_on_navigation` exhausts OCC retries (2)
+
+Each variant took ~4m44s and failed with `RetryLimitExceededException` (6 `DsqlExecutionStrategy`
+attempts) under `TimeoutException: Timeout during reading attempt`. The `Contains`-on-navigation
+translation appears to produce a slow query on DSQL; open — capture the SQL and a plan.
 
 ## Known caveats from running live
 
