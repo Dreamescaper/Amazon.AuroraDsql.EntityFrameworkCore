@@ -89,9 +89,7 @@ public class NpgsqlTestStore : RelationalTestStore
             else
             {
                 await using var context = createContext();
-                // DSQL finding: Npgsql's HasTables() counts the 'sys' schema, so EnsureCreated
-                // wrongly thinks tables exist. Create the tables directly instead.
-                await context.GetService<IRelationalDatabaseCreator>().CreateTablesAsync();
+                await context.Database.EnsureCreatedResilientlyAsync();
 
                 if (_additionalSql is not null)
                 {
@@ -108,11 +106,7 @@ public class NpgsqlTestStore : RelationalTestStore
 
     public override DbContextOptionsBuilder AddProviderOptions(DbContextOptionsBuilder builder)
         // DSQL has a single database, so all stores share TestEnvironment.DataSource.
-        // efcore.pg's ApplyConfiguration sets SingleQuery splitting; setting the same here avoids
-        // the MultipleCollectionIncludeWarning, which the spec infra treats as an error.
-        => builder
-            .UseDsql(TestEnvironment.DataSource)
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.MultipleCollectionIncludeWarning));
+        => builder.UseDsql(TestEnvironment.DataSource);
 
     private async Task<bool> CreateDatabaseAsync(Func<DbContext, Task>? clean)
     {
@@ -430,8 +424,7 @@ SELECT pg_terminate_backend (pg_stat_activity.pid)
 
     public static string CreateConnectionString(string name, string? options = null)
     {
-        // DSQL has a single database; ignore the store name.
-        var builder = new NpgsqlConnectionStringBuilder(TestEnvironment.DefaultConnection);
+        var builder = new NpgsqlConnectionStringBuilder(TestEnvironment.DefaultConnection) { Database = name };
 
         if (options is not null)
         {
