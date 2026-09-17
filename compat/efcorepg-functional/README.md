@@ -1,7 +1,7 @@
 # efcore.pg functional-suite compatibility harness
 
-**Exploratory / not part of the shipped provider.** Lives on the
-`efcorepg-functional-suite` branch.
+**Exploratory / not part of the shipped provider.** Deliberately not in the solution, so it is a
+separate project from the main tests; it is built by its own CI job.
 
 Goal: copy test classes from
 [`npgsql/efcore.pg`](https://github.com/npgsql/efcore.pg) `v10.0.3` (`test/EFCore.PG.FunctionalTests`)

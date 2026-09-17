@@ -181,8 +181,9 @@ conflict against a live/emulated conflict is verified in Phase 6.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
 - [x] Port/execute a representative subset of the `efcore.pg` functional test suite.
-      Harness lives on branch `efcorepg-functional-suite` (reuses efcore.pg's test utilities with
-      the public type names so test files copy unchanged). 20 suites ported; the core ones pass:
+      Harness lives in [`compat/efcorepg-functional/`](../compat/efcorepg-functional) (not in the
+      solution; reuses efcore.pg's test utilities with the public type names so test files copy
+      unchanged). 20 suites ported; the core ones pass:
       `FindNpgsqlTest` 411/411, `ManyToManyLoadNpgsqlTest` 358/358, `AdHocMiscellaneousQueryNpgsqlTest`
       69/71, `FunkyDataQueryNpgsqlTest` 42/42, `CompositeKeys*Query` 28/28, plus others. Remaining
       failures are DSQL limitations (`xid` concurrency tokens, `hstore`, indexing `bytea`) and
@@ -205,8 +206,8 @@ conflict against a live/emulated conflict is verified in Phase 6.
             `operator does not exist: character = jsonb`). DSQL supports arrays at query runtime,
             so parameters may need to stay native arrays (only stored columns must be jsonb).
 
-      Northwind: the suite's `Northwind.sql` was adapted for DSQL on the branch
-      ([`compat/efcorepg-functional/tools/adapt_northwind.py`](https://github.com/Dreamescaper/Amazon.AuroraDsql.EntityFrameworkCore/blob/efcorepg-functional-suite/compat/efcorepg-functional/tools/adapt_northwind.py)):
+      Northwind: the suite's `Northwind.sql` was adapted for DSQL
+      ([`tools/adapt_northwind.py`](../compat/efcorepg-functional/tools/adapt_northwind.py)):
       `SERIAL`→identity `CACHE 1`, sync `CREATE INDEX`→`ASYNC`, views materialised as tables,
       foreign keys deferred to after the data load (`NOT VALID` + async validate), extensions and
       trigger toggles removed. With that, the Northwind query suites pass ~2,900 tests
