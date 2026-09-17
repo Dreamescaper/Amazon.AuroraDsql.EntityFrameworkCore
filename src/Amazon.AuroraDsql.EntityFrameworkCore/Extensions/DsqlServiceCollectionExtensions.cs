@@ -31,6 +31,7 @@ public static class DsqlServiceCollectionExtensions
         serviceCollection.Replace(ServiceDescriptor.Singleton<IModelValidator, DsqlModelValidator>());
         serviceCollection.Replace(ServiceDescriptor.Singleton<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
         serviceCollection.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
+        serviceCollection.Replace(ServiceDescriptor.Scoped<IRelationalDatabaseCreator, DsqlDatabaseCreator>());
         serviceCollection.Replace(ServiceDescriptor.Scoped<IHistoryRepository, DsqlHistoryRepository>());
         serviceCollection.Replace(
             ServiceDescriptor.Scoped<IMigrationCommandExecutor, DsqlMigrationCommandExecutor>());
