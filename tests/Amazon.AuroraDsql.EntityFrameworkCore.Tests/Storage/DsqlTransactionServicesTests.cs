@@ -34,6 +34,14 @@ public class DsqlTransactionServicesTests : IDisposable
     }
 
     [Fact]
+    public void Database_creator_is_dsql_creator()
+    {
+        using var context = CreateContext();
+
+        Assert.IsType<DsqlDatabaseCreator>(context.GetService<IRelationalDatabaseCreator>());
+    }
+
+    [Fact]
     public void Transaction_factory_is_dsql_factory()
     {
         using var context = CreateContext();
