@@ -182,18 +182,19 @@ conflict against a live/emulated conflict is verified in Phase 6.
       drift and cover IAM auth.
 - [x] Port/execute a representative subset of the `efcore.pg` functional test suite.
       Harness lives on branch `efcorepg-functional-suite` (reuses efcore.pg's test utilities with
-      the public type names so test files copy unchanged). Results (one class per run, emulator):
-      `FindNpgsqlTest` 411/411, `ManyToManyLoadNpgsqlTest` 358/358, `FieldMappingNpgsqlTest`
-      156/167. Remaining failures are dominated by DSQL limitations (`xid` concurrency tokens,
-      `hstore`, indexing `bytea`) and harness single-database constraints — see that branch's
-      `FINDINGS.md`.
+      the public type names so test files copy unchanged). 20 suites ported; the core ones pass:
+      `FindNpgsqlTest` 411/411, `ManyToManyLoadNpgsqlTest` 358/358, `AdHocMiscellaneousQueryNpgsqlTest`
+      69/71, `FunkyDataQueryNpgsqlTest` 42/42, `CompositeKeys*Query` 28/28, plus others. Remaining
+      failures are DSQL limitations (`xid` concurrency tokens, `hstore`, indexing `bytea`) and
+      harness single-database constraints — see that branch's `FINDINGS.md`.
       Follow-ups found:
       - [x] Register `IModelValidator`/`IRelationalTypeMappingSource` as singletons (scope
             validation failed).
       - [x] Always emit an explicit identity `CACHE` (DSQL rejects identity without one).
       - [x] Normalize PostgreSQL type aliases in the model validator (`int`, `int8`, `varchar`, …).
-      - [ ] Decide on `EnsureCreated`: replace the database creator so `HasTables()` ignores the
-            `sys` schema, or document migrations as required.
+      - [x] `DsqlDatabaseCreator` ignores the `sys` schema in `HasTables()`, so `EnsureCreated`
+            works on DSQL (validated by the ported `FindNpgsqlTest` suite via the standard
+            `EnsureCreated` path).
       - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
