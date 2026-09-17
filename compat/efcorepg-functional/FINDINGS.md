@@ -1,7 +1,7 @@
 # efcore.pg functional-suite bring-up: findings
 
 Running a subset of `npgsql/efcore.pg` `v10.0.3` functional tests against this provider on the
-`dsql-emulator:0.1.1`. Each suite is run **one class at a time** (see "Harness limitations").
+`dsql-emulator:0.2.1`. Each suite is run **one class at a time** (see "Harness limitations").
 
 ## Results
 
@@ -129,7 +129,7 @@ providers, which the spec fixtures require (`UseInternalServiceProvider` skips `
 ## Reproducing
 
 ```bash
-docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.1.1
+docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.2.1
 export DSQL_TEST_CONNECTION="Host=127.0.0.1;Port=55432;Username=admin;Password=token;Database=postgres;SSL Mode=Require;Pooling=false"
 dotnet test --filter "FullyQualifiedName~.FindNpgsqlTest"
 dotnet test --filter "FullyQualifiedName~.AdHocMiscellaneousQueryNpgsqlTest"

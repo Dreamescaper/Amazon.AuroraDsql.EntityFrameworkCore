@@ -15,7 +15,7 @@ namespace Amazon.AuroraDsql.EntityFrameworkCore.IntegrationTests;
 /// </summary>
 public sealed class DsqlFixture : IAsyncLifetime
 {
-    private const string EmulatorImage = "ghcr.io/dreamescaper/dsql-emulator:0.1.1";
+    private const string EmulatorImage = "ghcr.io/dreamescaper/dsql-emulator:0.2.1";
 
     private IContainer? _container;
     private DsqlDataSource? _liveDataSource;

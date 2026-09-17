@@ -3,8 +3,8 @@
 Tracks problems found while using
 [`Dreamescaper/dsql-emulator`](https://github.com/Dreamescaper/dsql-emulator) for integration tests.
 
-**Status:** pinned to `ghcr.io/dreamescaper/dsql-emulator:0.1.1`. Release `v0.2.0` cannot be adopted
-yet — see the regression below.
+**Status:** pinned to `ghcr.io/dreamescaper/dsql-emulator:0.2.1`. The `v0.2.0` regression below was
+fixed in `v0.2.1`.
 
 ## How to use this file
 
@@ -28,15 +28,15 @@ Entry template:
 - **Upstream:** <issue link, if filed>
 ```
 
-## Blocking: v0.2.0 regression breaks the wire protocol for Npgsql
+## Resolved: v0.2.0 broke Npgsql's extended protocol (fixed in v0.2.1)
 
-- **Date:** 2026-09-17
-- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.0
-- **Type:** bug (regression vs `v0.1.1`)
-- **Impact on us:** the whole integration suite (9/9) and the harness `FindNpgsqlTest` (411/411)
-  fail on a fresh `v0.2.0` with
+- **Date:** 2026-09-17 (fixed 2026-09-17 in `v0.2.1`)
+- **Emulator images:** broken in `ghcr.io/dreamescaper/dsql-emulator:0.2.0`; fixed in `:0.2.1`
+- **Type:** bug (regression vs `v0.1.1`, resolved upstream)
+- **Impact on us:** on a fresh `v0.2.0` the whole integration suite (9/9) and the harness
+  `FindNpgsqlTest` (411/411) failed with
   `Npgsql.NpgsqlException : Received backend message CommandComplete while expecting ParseCompleteMessage`.
-  The same suites pass on a fresh `v0.1.1`.
+  The same suites pass on a fresh `v0.1.1` and on `v0.2.1`.
 - **Repro (Npgsql extended protocol):**
   ```csharp
   await using var conn = new NpgsqlConnection(
@@ -54,31 +54,37 @@ Entry template:
   `session.occIntercept` / `startRepair` / `reject` with `extended=true`) mishandles the message
   sequence when a statement inside a transaction is refused or errors: the client receives a
   `CommandComplete` where the extended protocol requires `ParseComplete`.
-- **Workaround:** pin `v0.1.1` (current).
-- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/1
+- **Resolution:** fixed upstream in `v0.2.1` (the adjudicator's savepoint is now written from the
+  frontend path, in the client's statement order, and only into a real gap in the pipeline). We run
+  pinned to `:0.2.1`.
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/1 (closed by `v0.2.1`),
+  release notes https://github.com/Dreamescaper/dsql-emulator/releases/tag/v0.2.1
 
-## What v0.2.0 changes (for when it is adoptable)
+## Adopted upstream changes (v0.2.1)
 
 - `CREATE INDEX ASYNC` is now rewritten in **multi-statement** queries too (scanner-based, not a
-  regex) — the old "whole statements only" limitation is gone.
+  regex) — the old "whole statements only" limitation no longer applies.
 - OCC conflicts are **adjudicated at COMMIT without waiting for locks**, across write-write,
   `FOR UPDATE`, `FOR KEY SHARE` and foreign-key overlap; the loser is decided at row access rather
   than commit order (documented divergence remains).
-- Refusal **wording now mirrors Aurora DSQL exactly**.
+- Refusal **wording mirrors Aurora DSQL exactly**.
 - Deterministic `occ.inject` rules are validated, but still not exposed by any CLI flag/env (see the
   open item below).
 
 ## Known limitations relevant to our tests
 
-Source: emulator README "What it does not do" (as of the pinned `v0.1.1`). These are documented
+Source: emulator README "What it does not do" (as of the pinned `v0.2.1`). These are documented
 behavior, not new findings.
 
-### Locking semantics differ (blocking vs lock-free)
+### OCC adjudication order can differ from DSQL
 - **Type:** limitation
-- **Impact:** Do not assert on conflict *timing* or on `FOR UPDATE`/lock-wait behavior. DSQL fails
-  the second committer immediately; the emulator (backed by PostgreSQL) waits, then fails.
+- **Impact:** Conflicts are now adjudicated at `COMMIT` without waiting for locks, but which
+  transaction loses is decided when the rows are read (the first writer refused a lock loses), not
+  by commit order as on DSQL. DSQL can also reject *every* side of a multi-row conflict, and a
+  conflict on `RETURNING`, `INSERT ... SELECT`, `ON CONFLICT` or a multi-statement query is reported
+  at the statement rather than at `COMMIT`.
 - **Workaround:** Use deterministic conflict injection for OCC retry tests; assert only the
-  outcome (`40001`), never the timing.
+  outcome (`40001`), never the timing or which side loses.
 
 ### IAM tokens accepted but not validated
 - **Type:** limitation
@@ -88,14 +94,6 @@ behavior, not new findings.
   AWS credentials/region to mint a token.
 - **Workaround:** Integration tests create a plain `NpgsqlDataSource` (not `Amazon.AuroraDsql.Npgsql`)
   with `SSL Mode=Require` and a dummy password. IAM auth is covered by the live suite only.
-
-### `ASYNC` rewrite matches whole statements (fixed in v0.2.0, not yet adopted)
-- **Type:** limitation (pinned version)
-- **Impact:** A **multi-statement** simple query containing `CREATE INDEX ASYNC` is not rewritten,
-  so PostgreSQL rejects it with a syntax error where DSQL reports its own error.
-- **Workaround:** Ensure the provider and tests send one statement per command (our
-  `IMigrationCommandExecutor` does). `v0.2.0` removes this limitation once the regression above is
-  fixed.
 
 ### `sys.jobs` is partial
 - **Type:** limitation
@@ -110,12 +108,6 @@ behavior, not new findings.
 - **Impact:** `version()`, `SHOW server_version`, `current_setting('server_version'...)` are
   rewritten; reads via any other path report the backing PostgreSQL version.
 - **Workaround:** Do not assert on server version.
-
-### Rejection wording is approximate (fixed in v0.2.0, not yet adopted)
-- **Type:** limitation (pinned version)
-- **Impact:** Error messages mirror DSQL's meaning but drift.
-- **Workaround:** Assert on **SQLSTATE**, never on message text. `v0.2.0` mirrors the wording
-  exactly once the regression above is fixed.
 
 ### No control plane
 - **Type:** limitation
@@ -132,7 +124,7 @@ behavior, not new findings.
 
 ### Deterministic OCC conflict injection is not reachable from the container
 - **Date:** 2026-09-17
-- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
 - **Type:** limitation (blocked test), candidate upstream change
 - **Detail:** the emulator supports deterministic commit-conflict injection, but the rules come from
   the embedded ruleset (`rules.Default()`; `session.occCommitConflict` reads
@@ -151,7 +143,7 @@ behavior, not new findings.
 
 ### Explicit isolation level rejected (`0A000: Unsupported isolation level: READ COMMITTED`)
 - **Date:** 2026-09-17
-- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
 - **Type:** expected behaviour (validates DSQL semantics), surfaced by our first integration run
 - **Impact on us:** Npgsql maps `IsolationLevel.Unspecified` to an explicit `READ COMMITTED`;
   every `BeginTransaction` failed.
@@ -160,7 +152,7 @@ behavior, not new findings.
 
 ### One DDL per transaction enforced (`0A000: a transaction can include only one DDL statement`)
 - **Date:** 2026-09-17
-- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.1.1
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
 - **Type:** expected behaviour (validates DSQL semantics)
 - **Impact on us:** EF's `Migrator` opens one transaction for the whole migration, so applying a
   multi-statement migration failed.
