@@ -160,7 +160,7 @@ WHERE table_type = 'BASE TABLE'
             query.CommandText = """
 SELECT routine_schema, routine_name
 FROM information_schema.routines
-WHERE routine_schema NOT IN ('pg_catalog', 'information_schema')
+WHERE routine_schema NOT IN ('pg_catalog', 'information_schema', 'sys')
 """;
             await using var reader = await query.ExecuteReaderAsync();
             while (await reader.ReadAsync())

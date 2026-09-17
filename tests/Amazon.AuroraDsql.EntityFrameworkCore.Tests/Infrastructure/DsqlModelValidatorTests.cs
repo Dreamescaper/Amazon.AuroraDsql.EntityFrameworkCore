@@ -114,6 +114,22 @@ public class DsqlModelValidatorTests : IDisposable
         public DateTime CreatedAt { get; set; }
     }
 
+    private sealed class ShortIdentityContext : DbContext
+    {
+        public ShortIdentityContext(DbContextOptions<ShortIdentityContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<ShortIdentityEntity> Entities => Set<ShortIdentityEntity>();
+    }
+
+    private sealed class ShortIdentityEntity
+    {
+        public short Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
     private sealed class JsonIndexContext : DbContext
     {
         public JsonIndexContext(DbContextOptions<JsonIndexContext> options)
@@ -143,6 +159,15 @@ public class DsqlModelValidatorTests : IDisposable
         using var context = new SupportedContext(Options<SupportedContext>());
 
         Assert.NotNull(context.Model);
+    }
+
+    [Fact]
+    public void Non_bigint_identity_column_is_rejected()
+    {
+        using var context = new ShortIdentityContext(Options<ShortIdentityContext>());
+
+        var exception = Assert.Throws<InvalidOperationException>(() => _ = context.Model);
+        Assert.Contains("bigint", exception.Message);
     }
 
     [Fact]

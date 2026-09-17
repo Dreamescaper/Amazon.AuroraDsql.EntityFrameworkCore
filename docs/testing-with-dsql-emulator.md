@@ -166,3 +166,8 @@ Notes and caveats for live runs:
 
 CI runs live tests only via the manual **Live tests** workflow
 (`.github/workflows/live.yml`); PR CI never touches a cluster.
+
+Behaviour differences found by running against a real cluster are recorded in
+[`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md). Note in particular that DSQL requires
+identity columns to be `bigint` (the emulator accepts `integer`), and that this provider widens
+`int` identity keys automatically.

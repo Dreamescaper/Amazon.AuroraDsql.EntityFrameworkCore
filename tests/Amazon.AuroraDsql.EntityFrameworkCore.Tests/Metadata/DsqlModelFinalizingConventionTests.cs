@@ -30,6 +30,22 @@ public class DsqlModelFinalizingConventionTests : IDisposable
         public string Name { get; set; } = string.Empty;
     }
 
+    private sealed class IntKeyContext : DbContext
+    {
+        public IntKeyContext(DbContextOptions<IntKeyContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<IntEntity> Entities => Set<IntEntity>();
+    }
+
+    private sealed class IntEntity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
     private sealed class LongKeyContext : DbContext
     {
         public LongKeyContext(DbContextOptions<LongKeyContext> options)
@@ -70,6 +86,17 @@ public class DsqlModelFinalizingConventionTests : IDisposable
         var property = context.Model.FindEntityType(typeof(GuidEntity))!.FindProperty(nameof(GuidEntity.Id))!;
 
         Assert.Equal("uuid_generate_v4()", property.GetDefaultValueSql());
+    }
+
+    [Fact]
+    public void Int_identity_key_is_widened_to_bigint()
+    {
+        using var context = new IntKeyContext(
+            new DbContextOptionsBuilder<IntKeyContext>().UseDsql(_dataSource).Options);
+        var property = context.Model.FindEntityType(typeof(IntEntity))!.FindProperty(nameof(IntEntity.Id))!;
+
+        Assert.Equal("bigint", property.GetColumnType());
+        Assert.NotNull(property.GetValueConverter());
     }
 
     [Fact]

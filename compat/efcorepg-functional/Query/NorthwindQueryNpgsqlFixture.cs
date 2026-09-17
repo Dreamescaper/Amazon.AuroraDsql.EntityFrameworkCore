@@ -29,21 +29,8 @@ public class NorthwindQueryNpgsqlFixture<TModelCustomizer> : NorthwindQueryRelat
         modelBuilder.Entity<Order>(
             b =>
             {
-                b.Property(o => o.EmployeeID).HasColumnType("int");
                 b.Property(o => o.OrderDate).HasColumnType("timestamp without time zone");
             });
-
-        modelBuilder.Entity<Employee>(
-            b =>
-            {
-                b.Property(c => c.EmployeeID).HasColumnType("int");
-                b.Property(c => c.ReportsTo).HasColumnType("int");
-            });
-
-        modelBuilder.Entity<Order>()
-            .Property(o => o.EmployeeID)
-            .HasColumnType("int");
-
         modelBuilder.Entity<Product>()
             .Property(p => p.UnitsInStock)
             .HasColumnType("smallint");

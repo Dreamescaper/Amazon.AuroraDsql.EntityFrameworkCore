@@ -71,6 +71,19 @@ Entry template:
 - Deterministic `occ.inject` rules are validated, but still not exposed by any CLI flag/env (see the
   open item below).
 
+### Accepts integer identity columns (DSQL requires bigint)
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.1
+- **Type:** bug (accepts DDL real DSQL rejects)
+- **Impact on us:** an `int` key mapped to PG identity passes on the emulator and fails the first
+  `CREATE TABLE` on a real cluster with
+  `0A000: datatype integer not supported, identity column type must be bigint`. Found by running the
+  harness live.
+- **Fix (ours):** the provider widens `int` identity keys to `bigint` (converter to `long`) and
+  rejects other non-bigint identity columns.
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/2
+- **See also:** [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md)
+
 ## Known limitations relevant to our tests
 
 Source: emulator README "What it does not do" (as of the pinned `v0.2.1`). These are documented

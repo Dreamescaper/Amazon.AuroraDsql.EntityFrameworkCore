@@ -202,6 +202,13 @@ conflict against a live/emulated conflict is verified in Phase 6.
             works on DSQL (validated by the ported `FindNpgsqlTest` suite via the standard
             `EnsureCreated` path).
       - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
+      - [x] Widen `int` identity keys to `bigint` (DSQL requires bigint identity; the emulator
+            accepts integer — [dsql-emulator#2](https://github.com/Dreamescaper/dsql-emulator/issues/2)).
+      - [ ] Re-run the full harness against a live cluster (a fresh token/AWS credentials window
+            long enough to finish) and record the remaining differences in
+            [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md).
+      - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
+            fail with an EF expression-type error; investigate or document as unsupported.
       - [ ] Expose null-ordering (efcore.pg's `ReverseNullOrdering`, internal) or default to
             `NULLS FIRST`; without it ~9 ordering-sensitive spec tests fail. DSQL supports
             `NULLS FIRST`/`LAST`.

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Amazon.AuroraDsql.EntityFrameworkCore.Infrastructure;
 
@@ -93,6 +94,19 @@ internal sealed class DsqlModelValidator : NpgsqlModelValidator
                         $"Aurora DSQL does not support the column type '{storeType}' used by "
                         + $"{entityType.DisplayName()}.{property.Name}. Map it to a supported type, "
                         + "or use a value converter (e.g. an enum to integer/text).");
+                }
+
+                // DSQL only supports bigint identity columns; int keys are widened by the convention,
+                // but an explicitly configured integer/smallint identity must fail loudly.
+                if (property.GetValueGenerationStrategy() is
+                        NpgsqlValueGenerationStrategy.IdentityAlwaysColumn
+                        or NpgsqlValueGenerationStrategy.IdentityByDefaultColumn
+                    && !string.Equals(NormalizeStoreType(storeType), "bigint", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Aurora DSQL requires identity columns to be 'bigint', but "
+                        + $"{entityType.DisplayName()}.{property.Name} is '{storeType}'. Use a long key "
+                        + "(int keys are widened to bigint automatically), or disable value generation.");
                 }
             }
         }
