@@ -22,6 +22,12 @@ SQL, almost all correctness can be asserted as strings without a database.
 ## Running the emulator
 
 Image: `ghcr.io/dreamescaper/dsql-emulator:0.1.1` (pinned in the fixture for reproducibility).
+
+> **Pinned to 0.1.1 on purpose.** `v0.2.0` is out and fixes the multi-statement `CREATE INDEX ASYNC`
+> rewrite and the refusal wording, but it currently breaks Npgsql's extended protocol for statements
+> that error inside a transaction. See
+> [`dsql-emulator-issues.md`](dsql-emulator-issues.md) and
+> [dsql-emulator#1](https://github.com/Dreamescaper/dsql-emulator/issues/1). Bump the tag once fixed.
 Single container serves PostgreSQL (internal `5433`) and the proxy on `5432`. Readiness is
 signalled by the log line `proxy listening`.
 

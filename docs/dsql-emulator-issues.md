@@ -3,9 +3,8 @@
 Tracks problems found while using
 [`Dreamescaper/dsql-emulator`](https://github.com/Dreamescaper/dsql-emulator) for integration tests.
 
-**Status:** no provider-specific findings yet — implementation has not started. The entries below
-are the emulator's documented limitations (from its README) that are relevant to our test strategy,
-recorded so we do not mistake them for provider bugs or assert behavior the emulator does not have.
+**Status:** pinned to `ghcr.io/dreamescaper/dsql-emulator:0.1.1`. Release `v0.2.0` cannot be adopted
+yet — see the regression below.
 
 ## How to use this file
 
@@ -29,9 +28,50 @@ Entry template:
 - **Upstream:** <issue link, if filed>
 ```
 
+## Blocking: v0.2.0 regression breaks the wire protocol for Npgsql
+
+- **Date:** 2026-09-17
+- **Emulator image:** ghcr.io/dreamescaper/dsql-emulator:0.2.0
+- **Type:** bug (regression vs `v0.1.1`)
+- **Impact on us:** the whole integration suite (9/9) and the harness `FindNpgsqlTest` (411/411)
+  fail on a fresh `v0.2.0` with
+  `Npgsql.NpgsqlException : Received backend message CommandComplete while expecting ParseCompleteMessage`.
+  The same suites pass on a fresh `v0.1.1`.
+- **Repro (Npgsql extended protocol):**
+  ```csharp
+  await using var conn = new NpgsqlConnection(
+      "Host=127.0.0.1;Port=55432;Username=admin;Password=x;Database=postgres;SSL Mode=Require");
+  await conn.OpenAsync();
+  await using var tx = await conn.BeginTransactionAsync();
+  await using var cmd = conn.CreateCommand();
+  cmd.CommandText = "SELECT 1 FROM \"NoSuchTableXYZ\"";
+  await cmd.ExecuteReaderAsync();   // v0.2.0: protocol error; v0.1.1: PostgresException (0A000)
+  ```
+  At the EF level it reproduces on a fresh database in
+  `HistoryRepository.GetAppliedMigrationsAsync` (the history table does not exist yet), i.e. any
+  backend error raised inside a transaction.
+- **Suspected area:** the new commit-time OCC machinery (`internal/proxy/adjudicator.go`,
+  `session.occIntercept` / `startRepair` / `reject` with `extended=true`) mishandles the message
+  sequence when a statement inside a transaction is refused or errors: the client receives a
+  `CommandComplete` where the extended protocol requires `ParseComplete`.
+- **Workaround:** pin `v0.1.1` (current).
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/1
+
+## What v0.2.0 changes (for when it is adoptable)
+
+- `CREATE INDEX ASYNC` is now rewritten in **multi-statement** queries too (scanner-based, not a
+  regex) — the old "whole statements only" limitation is gone.
+- OCC conflicts are **adjudicated at COMMIT without waiting for locks**, across write-write,
+  `FOR UPDATE`, `FOR KEY SHARE` and foreign-key overlap; the loser is decided at row access rather
+  than commit order (documented divergence remains).
+- Refusal **wording now mirrors Aurora DSQL exactly**.
+- Deterministic `occ.inject` rules are validated, but still not exposed by any CLI flag/env (see the
+  open item below).
+
 ## Known limitations relevant to our tests
 
-Source: emulator README "What it does not do". These are documented behavior, not new findings.
+Source: emulator README "What it does not do" (as of the pinned `v0.1.1`). These are documented
+behavior, not new findings.
 
 ### Locking semantics differ (blocking vs lock-free)
 - **Type:** limitation
@@ -49,13 +89,13 @@ Source: emulator README "What it does not do". These are documented behavior, no
 - **Workaround:** Integration tests create a plain `NpgsqlDataSource` (not `Amazon.AuroraDsql.Npgsql`)
   with `SSL Mode=Require` and a dummy password. IAM auth is covered by the live suite only.
 
-### `ASYNC` rewrite matches whole statements
-- **Type:** limitation
+### `ASYNC` rewrite matches whole statements (fixed in v0.2.0, not yet adopted)
+- **Type:** limitation (pinned version)
 - **Impact:** A **multi-statement** simple query containing `CREATE INDEX ASYNC` is not rewritten,
   so PostgreSQL rejects it with a syntax error where DSQL reports its own error.
 - **Workaround:** Ensure the provider and tests send one statement per command (our
-  `IMigrationCommandExecutor` does). Do not test multi-statement `psql -c 'a; b'` style batching
-  against the emulator.
+  `IMigrationCommandExecutor` does). `v0.2.0` removes this limitation once the regression above is
+  fixed.
 
 ### `sys.jobs` is partial
 - **Type:** limitation
@@ -71,10 +111,11 @@ Source: emulator README "What it does not do". These are documented behavior, no
   rewritten; reads via any other path report the backing PostgreSQL version.
 - **Workaround:** Do not assert on server version.
 
-### Rejection wording is approximate
-- **Type:** limitation
+### Rejection wording is approximate (fixed in v0.2.0, not yet adopted)
+- **Type:** limitation (pinned version)
 - **Impact:** Error messages mirror DSQL's meaning but drift.
-- **Workaround:** Assert on **SQLSTATE**, never on message text.
+- **Workaround:** Assert on **SQLSTATE**, never on message text. `v0.2.0` mirrors the wording
+  exactly once the regression above is fixed.
 
 ### No control plane
 - **Type:** limitation
@@ -95,8 +136,10 @@ Source: emulator README "What it does not do". These are documented behavior, no
 - **Type:** limitation (blocked test), candidate upstream change
 - **Detail:** the emulator supports deterministic commit-conflict injection, but the rules come from
   the embedded ruleset (`rules.Default()`; `session.occCommitConflict` reads
-  `classifier.Ruleset().OCC.Inject`). Neither `cmd/dsql-emu` nor the container exposes a flag/env to
-  supply a custom ruleset, so an induced `40001` cannot be triggered from integration tests.
+  `classifier.Ruleset().OCC.Inject`, default `[]`). Neither `cmd/dsql-emu` nor the container exposes a
+  flag/env to supply a custom ruleset — unchanged in `v0.2.0` (which adds validation and tests for
+  `occ.inject` rules but no way to load them). So an induced `40001` cannot be triggered from
+  integration tests.
 - **Impact on us:** the "induced OCC conflict is retried" integration test is blocked; OCC
   classification and retry are covered by unit tests instead.
 - **Candidate fix (upstream, `Dreamescaper/dsql-emulator`):** add a `--rules <file>` flag (and

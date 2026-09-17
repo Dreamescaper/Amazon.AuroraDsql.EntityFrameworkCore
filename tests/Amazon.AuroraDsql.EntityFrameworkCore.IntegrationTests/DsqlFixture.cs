@@ -30,8 +30,15 @@ public sealed class DsqlFixture : IAsyncLifetime
     {
         var endpoint = Environment.GetEnvironmentVariable("DSQL_CLUSTER_ENDPOINT")
             ?? Environment.GetEnvironmentVariable("CLUSTER_ENDPOINT");
+        var externalConnectionString = Environment.GetEnvironmentVariable("DSQL_TEST_CONNECTION");
 
-        if (!string.IsNullOrWhiteSpace(endpoint))
+        if (!string.IsNullOrWhiteSpace(externalConnectionString))
+        {
+            // Point at an already-running instance (e.g. the emulator container started by hand).
+            Target = "external connection string";
+            DataSource = new NpgsqlDataSourceBuilder(externalConnectionString).Build();
+        }
+        else if (!string.IsNullOrWhiteSpace(endpoint))
         {
             IsLive = true;
             Target = $"live cluster {endpoint}";

@@ -178,6 +178,11 @@ conflict against a live/emulated conflict is verified in Phase 6.
       conflict injection needs a custom ruleset it does not expose; see
       [`dsql-emulator-issues.md`](dsql-emulator-issues.md)), 3,000-row cap, batch `SaveChanges`
       limits.
+- [ ] Adopt emulator `v0.2.0` once it is fixed: it adds multi-statement `CREATE INDEX ASYNC`
+      rewriting and exact refusal wording, but currently breaks Npgsql's extended protocol for
+      statements that error inside a transaction
+      ([dsql-emulator#1](https://github.com/Dreamescaper/dsql-emulator/issues/1)). Stay pinned to
+      `0.1.1`.
 - [x] Both suites can target a real cluster (env: `DSQL_CLUSTER_ENDPOINT` + AWS creds), using the
       connector for IAM auth. Explicitly run via the manual **Live tests** workflow; PR CI stays on
       the emulator. Only execution against a real cluster remains to be exercised by the maintainer.

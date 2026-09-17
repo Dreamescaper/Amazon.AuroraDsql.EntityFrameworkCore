@@ -23,6 +23,9 @@ Because the type names and namespaces match, copied test files compile without e
 
 ## Running
 
+> Pinned to emulator `0.1.1`: `v0.2.0` breaks Npgsql's extended protocol for errored statements
+> inside a transaction — see [`../../docs/dsql-emulator-issues.md`](../../docs/dsql-emulator-issues.md).
+
 Emulator (default):
 
 ```bash
