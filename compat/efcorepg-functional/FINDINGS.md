@@ -16,9 +16,9 @@ Running a subset of `npgsql/efcore.pg` `v10.0.3` functional tests against this p
 | `OptimisticConcurrencyNpgsqlTest` | 0 | 48 | 1 | `xid` concurrency token (unsupported) |
 | `DataBindingNpgsqlTest` | 0 | 58 | 0 | `xid` concurrency token (unsupported) |
 | `CustomConvertersNpgsqlTest` | 0 | 56 | 4 | Index on `bytea` (not indexable in DSQL) |
-| `ConvertToProviderTypesNpgsqlTest` | 0 | 29 | 3 | Model-validation rejections (types) |
-| `NpgsqlValueGenerationScenariosTest` | 0 | 13 | 0 | Model-validation rejections |
-| `DefaultValuesTest` | 0 | 1 | 0 | Transient/OCC error (needs triage) |
+| `ConvertToProviderTypesNpgsqlTest` | 0 | 29 | 3 | Index on `bytea` (not indexable in DSQL) |
+| `NpgsqlValueGenerationScenariosTest` | 0 | 13 | 0 | Uses the store's raw `NpgsqlConnection` → `READ COMMITTED`; some schema interference |
+| `DefaultValuesTest` | 0 | 1 | 0 | Transient error (needs triage) |
 
 A whole-project run (all fixtures in one process) fails almost everything with
 `42P01: relation "..." does not exist` — that is cross-fixture interference, not a provider bug
@@ -62,6 +62,10 @@ pass on DSQL by design.
 - **Transaction/connection mismatch.** Some tests use the store's `NpgsqlConnection` with a
   context built on the shared data source, so the transaction is not associated with the
   connection (`FieldMappingNpgsqlTest`, 11 failures).
+- **Raw-connection transactions.** Tests that call `store.Connection.BeginTransaction()` bypass
+  the provider's connection and get Npgsql's default `READ COMMITTED`, which DSQL rejects
+  (`NpgsqlValueGenerationScenariosTest`, 9 failures). This is a harness/DSQL-semantics artifact,
+  not a provider path (a real app would use `context.Database.BeginTransaction`).
 
 ## Reproducing
 
