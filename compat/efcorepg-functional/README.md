@@ -39,7 +39,10 @@ dotnet test --filter "FullyQualifiedName~FindNpgsqlTest"
 `CompositeKeysQueryNpgsqlTest`, `CompositeKeysSplitQueryNpgsqlTest`, `CharacterQueryNpgsqlTest`,
 `NavigationTest`, `ConnectionSpecificationTest`, `BuiltInDataTypesNpgsqlTest`, `BatchingTest`,
 `OptimisticConcurrencyNpgsqlTest`, `DataBindingNpgsqlTest`, `CustomConvertersNpgsqlTest`,
-`ConvertToProviderTypesNpgsqlTest`, `NpgsqlValueGenerationScenariosTest`, `DefaultValuesTest`.
+`ConvertToProviderTypesNpgsqlTest`, `NpgsqlValueGenerationScenariosTest`, `DefaultValuesTest`, and
+the Northwind query suites (Where, Miscellaneous, GroupBy, Navigations, AggregateOperators,
+CompiledQuery, Include/SplitInclude, SetOperations, tracking, SqlQuery, QueryTagging) — the last
+group runs against a DSQL-adapted `Northwind.sql` produced by [`tools/adapt_northwind.py`](tools/adapt_northwind.py).
 
 Results and classification: [`FINDINGS.md`](FINDINGS.md). Run one class at a time — DSQL has a
 single database, so fixtures clobber each other if run together.

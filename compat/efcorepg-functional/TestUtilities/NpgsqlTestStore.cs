@@ -105,21 +105,27 @@ public class NpgsqlTestStore : RelationalTestStore
     }
 
     public override DbContextOptionsBuilder AddProviderOptions(DbContextOptionsBuilder builder)
+    {
         // DSQL has a single database, so all stores share TestEnvironment.DataSource.
-        // efcore.pg's ApplyConfiguration sets SingleQuery splitting; setting the same here avoids
-        // the MultipleCollectionIncludeWarning, which the spec infra treats as an error.
-        => builder
+        var optionsBuilder = builder
             .UseDsql(TestEnvironment.DataSource)
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.MultipleCollectionIncludeWarning));
+
+        // efcore.pg's ApplyConfiguration sets these; replicate them so ordering-sensitive tests
+        // behave like the Npgsql suite. ReverseNullOrdering is internal, hence reflection.
+        var npgsqlOptions = new Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.NpgsqlDbContextOptionsBuilder(optionsBuilder);
+        typeof(Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.NpgsqlDbContextOptionsBuilder)
+            .GetMethod("ReverseNullOrdering", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+            ?.Invoke(npgsqlOptions, [true]);
+
+        return optionsBuilder;
+    }
 
     private async Task<bool> CreateDatabaseAsync(Func<DbContext, Task>? clean)
     {
         // DSQL has no CREATE DATABASE. Reset the single database instead: drop every table so
-        // EnsureCreated can recreate the schema. Each DROP is its own DDL/transaction.
-        if (_scriptPath is null)
-        {
-            await DropAllTablesAsync();
-        }
+        // EnsureCreated / Northwind.sql can recreate the schema. Each DROP is its own DDL.
+        await DropAllTablesAsync();
 
         return true;
     }
@@ -128,6 +134,30 @@ public class NpgsqlTestStore : RelationalTestStore
     {
         await using var connection = new NpgsqlConnection(CreateAdminConnectionString());
         await connection.OpenAsync();
+
+        // Functions first (they may reference tables), then tables.
+        var functions = new List<string>();
+        await using (var query = connection.CreateCommand())
+        {
+            query.CommandText = """
+SELECT p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')'
+FROM pg_proc AS p
+JOIN pg_namespace AS n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.prokind = 'f'
+""";
+            await using var reader = await query.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                functions.Add(reader.GetString(0));
+            }
+        }
+
+        foreach (var function in functions)
+        {
+            await using var drop = connection.CreateCommand();
+            drop.CommandText = $"DROP FUNCTION IF EXISTS \"{function.Split('(')[0]}\"({function[(function.IndexOf('(') + 1)..]} CASCADE";
+            await drop.ExecuteNonQueryAsync();
+        }
 
         var tables = new List<string>();
         await using (var query = connection.CreateCommand())
@@ -183,19 +213,24 @@ public class NpgsqlTestStore : RelationalTestStore
     public void ExecuteScript(string scriptPath)
     {
         var script = File.ReadAllText(scriptPath);
-        Execute(
-            Connection, command =>
+        var batches = new Regex("^GO", RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromMilliseconds(1000.0))
+            .Split(script).Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
+        Connection.Open();
+        try
+        {
+            foreach (var batch in batches)
             {
-                foreach (var batch in
-                         new Regex("^GO", RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromMilliseconds(1000.0))
-                             .Split(script).Where(b => !string.IsNullOrEmpty(b)))
-                {
-                    command.CommandText = batch;
-                    command.ExecuteNonQuery();
-                }
+                using var command = Connection.CreateCommand();
+                command.CommandText = batch;
+                command.CommandTimeout = CommandTimeout;
+                command.ExecuteNonQuery();
+            }
+        }
+        finally
+        {
+            Connection.Close();
+        }
 
-                return 0;
-            }, "");
     }
 
     private static string GetCreateDatabaseStatement(string name)

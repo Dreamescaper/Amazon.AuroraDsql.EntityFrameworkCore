@@ -23,7 +23,5 @@ public class NpgsqlNorthwindTestStoreFactory : NpgsqlTestStoreFactory
         => NpgsqlTestStore.GetOrCreate(
             Name,
             scriptPath: "Northwind.sql",
-            additionalSql: TestEnvironment.PostgresVersion >= new Version(12, 0)
-                ? """CREATE COLLATION IF NOT EXISTS "some-case-insensitive-collation" (LOCALE = 'en-u-ks-primary', PROVIDER = icu, DETERMINISTIC = False);"""
-                : null);
+            additionalSql: null); // DSQL only supports the C collation
 }

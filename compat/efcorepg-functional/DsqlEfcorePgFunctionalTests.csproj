@@ -61,4 +61,9 @@
 
 
 
+
+  <ItemGroup>
+    <None Update="Northwind.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
