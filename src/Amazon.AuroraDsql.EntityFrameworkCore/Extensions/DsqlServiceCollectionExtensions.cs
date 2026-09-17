@@ -28,8 +28,8 @@ public static class DsqlServiceCollectionExtensions
 
         serviceCollection.TryAddEnumerable(
             ServiceDescriptor.Scoped<IConventionSetPlugin, DsqlConventionSetPlugin>());
-        serviceCollection.Replace(ServiceDescriptor.Scoped<IModelValidator, DsqlModelValidator>());
-        serviceCollection.Replace(ServiceDescriptor.Scoped<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
+        serviceCollection.Replace(ServiceDescriptor.Singleton<IModelValidator, DsqlModelValidator>());
+        serviceCollection.Replace(ServiceDescriptor.Singleton<IRelationalTypeMappingSource, DsqlTypeMappingSource>());
         serviceCollection.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DsqlMigrationsSqlGenerator>());
         serviceCollection.Replace(ServiceDescriptor.Scoped<IHistoryRepository, DsqlHistoryRepository>());
         serviceCollection.Replace(

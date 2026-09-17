@@ -84,6 +84,36 @@ public class DsqlModelValidatorTests : IDisposable
         public NpgsqlRange<int> Span { get; set; }
     }
 
+    private sealed class AliasContext : DbContext
+    {
+        public AliasContext(DbContextOptions<AliasContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<AliasEntity> Entities => Set<AliasEntity>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<AliasEntity>(builder =>
+            {
+                builder.Property(e => e.Count).HasColumnType("int");
+                builder.Property(e => e.Amount).HasColumnType("decimal(18,6)");
+                builder.Property(e => e.Name).HasColumnType("varchar(100)");
+                builder.Property(e => e.CreatedAt).HasColumnType("timestamptz");
+            });
+        }
+    }
+
+    private sealed class AliasEntity
+    {
+        public Guid Id { get; set; }
+        public int Count { get; set; }
+        public decimal Amount { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
     private sealed class JsonIndexContext : DbContext
     {
         public JsonIndexContext(DbContextOptions<JsonIndexContext> options)
@@ -111,6 +141,14 @@ public class DsqlModelValidatorTests : IDisposable
     public void Supported_model_validates()
     {
         using var context = new SupportedContext(Options<SupportedContext>());
+
+        Assert.NotNull(context.Model);
+    }
+
+    [Fact]
+    public void Postgres_type_aliases_are_accepted()
+    {
+        using var context = new AliasContext(Options<AliasContext>());
 
         Assert.NotNull(context.Model);
     }

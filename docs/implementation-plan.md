@@ -180,10 +180,21 @@ conflict against a live/emulated conflict is verified in Phase 6.
       limits.
 - [ ] Small live-cluster smoke suite (env: `CLUSTER_ENDPOINT` + AWS creds) to catch emulator
       drift and cover IAM auth.
-- [~] Port/execute a representative subset of the `efcore.pg` functional test suite to find gaps.
-      In progress on branch `efcorepg-functional-suite` (a scratch harness that reuses efcore.pg's
-      test utilities with the public type names so test files copy unchanged). Findings are
-      recorded there. This surfaced the need for `AddEntityFrameworkDsql` (see Phase 1).
+- [x] Port/execute a representative subset of the `efcore.pg` functional test suite.
+      Harness lives on branch `efcorepg-functional-suite` (reuses efcore.pg's test utilities with
+      the public type names so test files copy unchanged). Results (one class per run, emulator):
+      `FindNpgsqlTest` 411/411, `ManyToManyLoadNpgsqlTest` 358/358, `FieldMappingNpgsqlTest`
+      156/167. Remaining failures are dominated by DSQL limitations (`xid` concurrency tokens,
+      `hstore`, indexing `bytea`) and harness single-database constraints — see that branch's
+      `FINDINGS.md`.
+      Follow-ups found:
+      - [x] Register `IModelValidator`/`IRelationalTypeMappingSource` as singletons (scope
+            validation failed).
+      - [x] Always emit an explicit identity `CACHE` (DSQL rejects identity without one).
+      - [x] Normalize PostgreSQL type aliases in the model validator (`int`, `int8`, `varchar`, …).
+      - [ ] Decide on `EnsureCreated`: replace the database creator so `HasTables()` ignores the
+            `sys` schema, or document migrations as required.
+      - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.

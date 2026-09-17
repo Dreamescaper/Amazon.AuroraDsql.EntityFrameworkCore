@@ -50,7 +50,7 @@ Every observed DSQL incompatibility maps to a specific, public, overridable comp
 | Unsupported types/features | model validation + `IRelationalTypeMappingSource` | model validator + trimmed type mapping source |
 | Primitive collections → native PG arrays (unstorable) | `NpgsqlTypeMappingSource.FindCollectionMapping` | subclass; map collections to `jsonb` JSON arrays (§5.1) |
 | UUID keys need a server-side default | model conventions | model-finalizing convention: `gen_random_uuid()` |
-| Identity cache size (`CACHE n`) | migrations SQL generator | inject `CACHE n` for `long` identity columns (model annotations do not survive to the runtime model) |
+| Identity columns require an explicit cache | migrations SQL generator | always emit `CACHE 1` (or `CACHE n` when `EnableIdentityColumns`); model annotations do not survive to the runtime model |
 
 ### Benefits
 
@@ -235,6 +235,18 @@ package first, with the option to upstream later.
 - Behavior of `ExecuteUpdate`/`ExecuteDelete` and `SELECT ... FOR UPDATE` (DSQL allows locking
   only with equality predicates on a single table's primary key).
 - Whether to ship an analyzer that flags unsupported mappings at compile time.
+
+Known DSQL limitations surfaced by porting the `efcore.pg` suite (see
+[`implementation-plan.md`](implementation-plan.md) Phase 6):
+
+- **`xid` concurrency tokens are unsupported.** Npgsql maps `uint`/`[Timestamp]` row versions to
+  the `xid` system column; DSQL has none. Use an application-managed concurrency token
+  (`IsConcurrencyToken()` on a supported column) instead. The model validator rejects `xid` loudly.
+- **`EnsureCreated` is unreliable.** Npgsql's `HasTables()` counts any non-system schema, and DSQL
+  exposes the `sys` schema, so `EnsureCreated` believes tables exist and skips creation. Use
+  migrations, or call `IRelationalDatabaseCreator.CreateTablesAsync()` directly.
+- **One database only.** Test/tenant isolation must use schemas or separate clusters; code and
+  fixtures that assume `CREATE DATABASE` per tenant do not work.
 
 ## 11. References
 

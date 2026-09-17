@@ -94,10 +94,32 @@ internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
         }
     }
 
+    protected override void IdentityDefinition(
+        ColumnOperation operation,
+        MigrationCommandListBuilder builder)
+    {
+        var identityOptions = operation[NpgsqlAnnotationNames.IdentityOptions] as string;
+
+        base.IdentityDefinition(operation, builder);
+
+        // Npgsql omits CACHE when it is 1; DSQL requires an explicit cache size. Append one when
+        // the injected options carry nothing but the cache.
+        if (identityOptions is not null)
+        {
+            var data = IdentitySequenceOptionsData.Deserialize(identityOptions);
+
+            if (data is { NumbersToCache: 1, StartValue: null, IncrementBy: 1, MinValue: null, MaxValue: null, IsCyclic: false })
+            {
+                builder.Append(" (CACHE 1)");
+            }
+        }
+    }
+
     private void ApplyIdentityCache(ColumnOperation operation)
     {
-        if (!_options.UseIdentityColumns
-            || operation[NpgsqlAnnotationNames.IdentityOptions] is not null
+        // DSQL rejects identity columns that do not specify an explicit cache. When caching is not
+        // opted into, emit CACHE 1 (DSQL's other permitted value).
+        if (operation[NpgsqlAnnotationNames.IdentityOptions] is not null
             || operation[NpgsqlAnnotationNames.ValueGenerationStrategy] is not NpgsqlValueGenerationStrategy strategy
             || strategy is not (NpgsqlValueGenerationStrategy.IdentityAlwaysColumn
                 or NpgsqlValueGenerationStrategy.IdentityByDefaultColumn))
@@ -105,8 +127,10 @@ internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
             return;
         }
 
+        var cacheSize = _options.UseIdentityColumns ? _options.IdentityCacheSize : 1;
+
         operation[NpgsqlAnnotationNames.IdentityOptions] =
-            new IdentitySequenceOptionsData { NumbersToCache = _options.IdentityCacheSize }.Serialize();
+            new IdentitySequenceOptionsData { NumbersToCache = cacheSize }.Serialize();
     }
 
     protected override void Generate(

@@ -30,6 +30,9 @@ publish/
 *.pubxml
 *.pubxml.user
 
+# Exploratory compatibility harness (lives on efcorepg-functional-suite branch)
+compat/
+
 # OS
 .DS_Store
 Thumbs.db
