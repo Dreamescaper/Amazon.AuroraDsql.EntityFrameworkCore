@@ -28,7 +28,18 @@ cd compat/efcorepg-functional && dotnet test --filter "FullyQualifiedName~.FindN
 export DSQL_TEST_CONNECTION="Host=your-cluster.dsql.eu-central-1.on.aws;Port=5432;Username=admin;Password=<token>;Database=postgres;SSL Mode=VerifyFull;No Reset On Close=true;Pooling=false"
 ```
 
-A single token lives 15 minutes, so use it for the fast suites only. Never commit a token.
+A token can be generated with a longer lifetime (CLI/SDK default is 15 minutes, the console default
+is 1 hour, and the maximum is 604,800 seconds — one week):
+
+```bash
+aws dsql generate-db-connect-admin-auth-token \
+  --hostname your-cluster.dsql.eu-central-1.on.aws --region eu-central-1 --expires-in 86400
+```
+
+Caveats: DSQL also rejects the connection if the *IAM role session* behind the token has expired, so
+a long token only helps while that session is valid; and the token is not refreshed, it is simply
+reused. Never commit a token. For an unattended full run, prefer credentials so the connector
+refreshes tokens per connection.
 
 ## Results
 
