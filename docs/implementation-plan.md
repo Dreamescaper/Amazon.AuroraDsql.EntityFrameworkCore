@@ -200,11 +200,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Expose null-ordering (efcore.pg's `ReverseNullOrdering`, internal) or default to
             `NULLS FIRST`; without it ~9 ordering-sensitive spec tests fail. DSQL supports
             `NULLS FIRST`/`LAST`.
-      - [ ] Inline primitive-collection parameters: with collections mapped to `jsonb`,
-            `Contains` over an inline array parameter translates to PostgreSQL array operators
-            against a jsonb parameter (`op ANY/ALL (array) requires array on right side`,
-            `operator does not exist: character = jsonb`). DSQL supports arrays at query runtime,
-            so parameters may need to stay native arrays (only stored columns must be jsonb).
+      - [x] Inline primitive-collection parameters stay native PostgreSQL arrays; only stored
+            columns map to `jsonb` (`DsqlTypeMappingSource` applies the jsonb mapping only when
+            mapping an `IProperty`). DSQL supports arrays at query runtime. Fixed the 8 Northwind
+            array-parameter failures.
 
       Northwind: the suite's `Northwind.sql` was adapted for DSQL
       ([`tools/adapt_northwind.py`](../compat/efcorepg-functional/tools/adapt_northwind.py)):

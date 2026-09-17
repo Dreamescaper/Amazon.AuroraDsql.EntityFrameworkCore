@@ -48,7 +48,7 @@ Every observed DSQL incompatibility maps to a specific, public, overridable comp
 | Multiple DDL statements in one migration transaction | EF `IMigrationCommandExecutor` | per-command transaction executor |
 | OCC conflict retry | EF `IExecutionStrategy` | DSQL retry strategy with backoff/jitter on `40001` |
 | Unsupported types/features | model validation + `IRelationalTypeMappingSource` | model validator + trimmed type mapping source |
-| Primitive collections → native PG arrays (unstorable) | `NpgsqlTypeMappingSource.FindCollectionMapping` | subclass; map collections to `jsonb` JSON arrays (§5.1) |
+| Stored primitive collections → native PG arrays (unstorable) | `NpgsqlTypeMappingSource.FindCollectionMapping` | subclass; map stored collections to `jsonb`, keep parameters as arrays (§5.1) |
 | UUID keys need a server-side default | model conventions | model-finalizing convention: `gen_random_uuid()` |
 | Identity columns require an explicit cache | migrations SQL generator | always emit `CACHE 1` (or `CACHE n` when `EnableIdentityColumns`); model annotations do not survive to the runtime model |
 

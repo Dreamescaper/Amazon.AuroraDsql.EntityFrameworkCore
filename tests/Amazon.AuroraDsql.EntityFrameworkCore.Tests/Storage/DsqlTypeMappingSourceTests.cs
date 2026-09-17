@@ -31,6 +31,8 @@ public class DsqlTypeMappingSourceTests : IDisposable
         public List<string> Tags { get; set; } = [];
         public byte[] Data { get; set; } = [];
         public List<int> JsonNumbers { get; set; } = [];
+        public int Quantity { get; set; }
+        public string Label { get; set; } = string.Empty;
     }
 
     private CollectionsContext CreateContext()
@@ -75,6 +77,30 @@ public class DsqlTypeMappingSourceTests : IDisposable
         var mapping = Mapping(context, nameof(CollectionsEntity.Data));
 
         Assert.Equal("bytea", mapping.StoreType);
+    }
+
+    [Fact]
+    public void Inline_int_array_parameter_stays_a_native_array()
+    {
+        using var context = CreateContext();
+        var ids = new[] { 1, 2 };
+
+        var sql = context.Entities.Where(e => ids.Contains(e.Quantity)).ToQueryString();
+
+        Assert.Contains("= ANY", sql);
+        Assert.DoesNotContain("jsonb", sql);
+    }
+
+    [Fact]
+    public void Inline_string_array_parameter_stays_a_native_array()
+    {
+        using var context = CreateContext();
+        var names = new[] { "a", "b" };
+
+        var sql = context.Entities.Where(e => names.Contains(e.Label)).ToQueryString();
+
+        Assert.Contains("= ANY", sql);
+        Assert.DoesNotContain("jsonb", sql);
     }
 
     [Fact]

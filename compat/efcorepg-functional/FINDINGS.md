@@ -64,19 +64,20 @@ efcore.pg, the harness enables Npgsql's internal `ReverseNullOrdering` (via refl
 | `NorthwindSplitIncludeNoTrackingQueryNpgsqlTest` | 236 | 0 | 0 |
 | `NorthwindSetOperationsQueryNpgsqlTest` | 192 | 0 | 0 |
 | `NorthwindNavigationsQueryNpgsqlTest` | 146 | 0 | 0 |
-| `NorthwindAggregateOperatorsQueryNpgsqlTest` | 416 | 0 | 6 |
+| `NorthwindAggregateOperatorsQueryNpgsqlTest` | 422 | 0 | 0 |
 | `NorthwindAsNoTrackingQueryNpgsqlTest` | 24 | 0 | 0 |
 | `NorthwindChangeTrackingQueryNpgsqlTest` | 17 | 0 | 0 |
-| `NorthwindCompiledQueryNpgsqlTest` | 30 | 0 | 2 |
+| `NorthwindCompiledQueryNpgsqlTest` | 32 | 0 | 0 |
 | `NorthwindSqlQueryNpgsqlTest` | 9 | 0 | 0 |
 | `NorthwindQueryTaggingQueryNpgsqlTest` | 9 | 0 | 0 |
 | `NorthwindAsTrackingQueryNpgsqlTest` | 6 | 0 | 0 |
 
-The 8 failures are all inline **array parameters**: `Contains_with_local_*_array_closure`,
-`Query_with_array_parameter` — e.g. `op ANY/ALL (array) requires array on right side`,
-`operator does not exist: character = jsonb`. Because primitive collections map to `jsonb`, an
-inline parameter that EF sends as a PostgreSQL array no longer matches. This is the main
-provider follow-up from Northwind.
+Every ported Northwind suite now passes. The previously failing 8 tests were inline **array
+parameters** (`Contains_with_local_*_array_closure`, `Query_with_array_parameter`, e.g.
+`op ANY/ALL (array) requires array on right side`, `operator does not exist: character = jsonb`):
+primitive collections were mapped to `jsonb` for parameters as well as columns. Fixed by applying
+the `jsonb` mapping only when mapping an `IProperty`; inline parameters stay native PostgreSQL
+arrays (DSQL supports arrays at query runtime).
 
 `ManyToManyQueryNpgsqlTest` / `ManyToManyNoTrackingQueryNpgsqlTest` were dropped: their
 provider-specific fixture fails with `Unable to determine the relationship ... UnidirectionalEntityOne.Collection`,
@@ -115,11 +116,6 @@ providers, which the spec fixtures require (`UseInternalServiceProvider` skips `
   tests' SQL Server assumptions) is internal and not exposed by this provider. The harness enables
   it by reflection; the provider should expose an equivalent option (DSQL supports `NULLS FIRST`).
   Without it, ordering-sensitive tests fail.
-- **Inline primitive-collection parameters.** With collections mapped to `jsonb`, `Contains` over
-  an inline array parameter translates to PostgreSQL array operators (`= ANY(@p)`) against a jsonb
-  parameter. DSQL supports arrays at query runtime, so parameters may need to stay native arrays
-  (only stored columns must be jsonb), or the translation needs a jsonb-aware path.
-
 ## Harness limitations (not provider bugs)
 
 - **Single database.** The spec suites assume a separate database per fixture
