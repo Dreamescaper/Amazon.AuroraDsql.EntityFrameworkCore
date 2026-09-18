@@ -275,6 +275,28 @@ concurrency control on every transaction; a conflicting commit fails with `SQLST
 `DsqlExecutionStrategy` retries. The two layers compose: use an application token for row-level
 conflict semantics, and rely on `40001` retries for transient serialization conflicts.
 
+### Row and transaction limits
+
+DSQL caps each write transaction (all quotas return `SQLSTATE 54000`):
+
+| Limit | Value |
+| --- | --- |
+| Rows mutated per transaction | 3,000 |
+| Data modified per transaction | 10 MiB |
+| Transaction age | 5 minutes |
+
+The row limit applies to all `INSERT`/`UPDATE`/`DELETE` in the transaction, including cascades,
+`ExecuteUpdate`/`ExecuteDelete`, and rows touched by triggers (DSQL's row-counting is independent
+of the number of secondary indexes). **Decision: do not pre-split or wrap commands; surface the
+server error.** Splitting automatically would change transactional semantics and is not possible
+without rewriting the SQL EF generates, which the design forbids (§3–4). `DsqlExecutionStrategy`
+retries only `40001`, so a `54000` failure is never masked by retries. Applications should chunk
+writes so each `SaveChanges` commits fewer than 3,000 rows and keep transactions short; the
+harness's adapted Northwind loader follows the same rule (batched inserts).
+
+Other hard limits worth knowing: 10 schemas per database, 24 indexes per table, 8 columns per
+index, 10,000 connections per cluster, 60-minute connection lifetime, and 15-minute token expiry.
+
 ## 8. Connections and authentication
 
 Use `Amazon.AuroraDsql.Npgsql`'s `DsqlDataSource` for connections and IAM token auth. Its
@@ -303,9 +325,8 @@ package first, with the option to upstream later.
 
 - Whether DSQL exposes `pg_catalog`/information_schema sufficiently for `dotnet ef dbcontext
   scaffold` and `EnsureCreated`/`CanConnect`.
-- Enforcement of the 3,000-row modification limit: detect and pre-split, or document and surface
-  the server error?
-- Which bulk-expansion patterns in `SaveChanges` could implicitly exceed the row limit.
+- Which bulk-expansion patterns in `SaveChanges` could implicitly exceed the row limit (the limit
+  itself is documented and surfaced, not pre-split — see §7 "Row and transaction limits").
 - Behavior of `ExecuteUpdate`/`ExecuteDelete` and `SELECT ... FOR UPDATE` (DSQL allows locking
   only with equality predicates on a single table's primary key).
 - Whether to ship an analyzer that flags unsupported mappings at compile time.

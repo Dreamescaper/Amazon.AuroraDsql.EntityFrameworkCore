@@ -53,6 +53,10 @@ Concurrency: DSQL has no `xid` column, so Npgsql `[Timestamp]`/`uint` row versio
 an application-managed token (`Property(w => w.Version).IsConcurrencyToken()`); DSQL's own conflicts
 surface as `40001` and are retried. See [`docs/design.md`](docs/design.md) §7.
 
+Limits: each DSQL write transaction may mutate at most 3,000 rows / 10 MiB and last at most 5
+minutes (`SQLSTATE 54000`). Chunk `SaveChanges` accordingly; the server error is surfaced, not
+worked around. See [`docs/design.md`](docs/design.md) §7.
+
 > **Package id note:** this project currently uses the same id (`Amazon.AuroraDsql.EntityFrameworkCore`)
 > as the AWS Labs adapter. Both expose `UseDsql` and cannot be referenced together; the id must be
 > resolved before any NuGet release. See [`docs/comparison-aurora-dsql-orms.md`](docs/comparison-aurora-dsql-orms.md).
