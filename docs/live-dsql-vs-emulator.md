@@ -42,9 +42,9 @@ aws dsql generate-db-connect-admin-auth-token \
 ```
 
 Caveats: DSQL also rejects the connection if the *IAM role session* behind the token has expired, so
-a long token only helps while that session is valid; and the token is not refreshed, it is simply
-reused. Never commit a token. For an unattended full run, prefer credentials so the connector
-refreshes tokens per connection.
+a long token only helps while that session is valid (observed both ~1 hour and ~15 minutes on the
+same cluster); and the token is not refreshed, it is simply reused. Never commit a token. For an
+unattended full run, prefer credentials so the connector refreshes tokens per connection.
 
 A presigned-token run that outlives the role session **does not fail fast**: every subsequent
 command gets `08006 unable to accept connection, access denied` (`Hint: The security token ... has
@@ -63,9 +63,31 @@ emulator runs it fine, so the exclusion only bites live runs.
 
 ## Results
 
-A first full live pass (with a short-lived token) covered the provider suite and the non-Northwind
-harness suites. Northwind suites load a 1 MB script statement-by-statement over the WAN and did not
-fit the 15-minute token window; they are pending a credentials-based run.
+A first full live pass (short-lived token) covered the provider suite and the non-Northwind
+harness suites. A second pass on 2026-09-18 ran the Northwind suites (slow
+`Where_contains_on_navigation` excluded); the fast ones completed before the token's STS session
+expired:
+
+| Suite | Live cluster |
+| --- | ---: |
+| `FindNpgsqlTest` | **411/411** |
+| `NorthwindAsTrackingQueryNpgsqlTest` | **6/6** |
+| `NorthwindQueryTaggingQueryNpgsqlTest` | **9/9** |
+| `NorthwindSqlQueryNpgsqlTest` | **9/9** |
+| `NorthwindChangeTrackingQueryNpgsqlTest` | **17/17** |
+| `NorthwindAsNoTrackingQueryNpgsqlTest` | **24/24** |
+| `NorthwindCompiledQueryNpgsqlTest` | **32/32** |
+| `NorthwindNavigationsQueryNpgsqlTest` | **146/146** |
+| `NorthwindSetOperationsQueryNpgsqlTest` | **192/192** |
+| `NorthwindIncludeNoTrackingQueryNpgsqlTest` | **236/236** |
+| `NorthwindSplitIncludeNoTrackingQueryNpgsqlTest` | **236/236** |
+| `NorthwindEFPropertyIncludeQueryNpgsqlTest` | **238/238** |
+
+That is 1,556 tests with 0 failures. `NorthwindAggregateOperators`, `NorthwindGroupBy`,
+`NorthwindWhere` and `NorthwindMiscellaneous` were attempted next, but the STS session behind that
+token expired (~15 minutes this time), after which every command returned `08006` and
+`DsqlExecutionStrategy` retried it 6×; all 34 observed failures were that, with no genuine
+assertion/SQL diff. Those four still need a credentials-based run (or one short window each).
 
 | Suite | Emulator | Live cluster |
 | --- | --- | --- |
