@@ -86,10 +86,11 @@ i.e. EF 10.0.4 (efcore.pg v10.0.3) vs 10.0.12 model-configuration drift, unrelat
 ### `NorthwindWhere` (4 failures) and SQL-snapshot re-baselining
 
 - `NorthwindWhere` — 4 failures, both `object[]`/`List<object>` `Contains` over an `int` identity key
-  that the provider widens to `bigint`. EF's `object[]` collection translation trips over the value
-  converter:
-  `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`. Reproduced
-  on the emulator and live; typed collections (`int[]`/`List<int>`) pass. Full write-up in
+  that the provider widens to `bigint`. This is **upstream in efcore.pg**: `NpgsqlArrayConverter`
+  invokes the element converter (`int → long`) with an `object` element, so query compilation throws
+  `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`
+  ([npgsql/efcore.pg#3916](https://github.com/npgsql/efcore.pg/issues/3916)); it reproduces with the
+  plain Npgsql provider. Typed collections (`int[]`/`List<int>`) pass. Full write-up in
   [`docs/live-dsql-vs-emulator.md`](../../docs/live-dsql-vs-emulator.md).
 
 - `NorthwindGroupBy` (132) / `NorthwindSqlQuery` (2) were **not** a provider bug: they were

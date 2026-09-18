@@ -258,10 +258,12 @@ translation appears to produce a slow query on DSQL; open — capture the SQL an
 - **`List<object>` / `object[]` `Contains` over a widened int key.** After the `int` → `bigint`
   widening, `Where_list_object_contains_over_value_type` and
   `Where_array_of_object_contains_over_value_type` fail with
-  `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`. This is
-  an EF translation interaction with the value converter on the key, not a DSQL behaviour
-  difference; 4 tests, tracked in the plan. Reproduced on the emulator. Workaround: use a typed
-  collection (`int[]`/`List<int>`), which translates to a `jsonb`/array `Contains` and passes.
+  `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`. Root
+  cause is **upstream in efcore.pg**, not this provider or DSQL: `NpgsqlArrayConverter` invokes the
+  element converter (`int → long`) with an `object` element
+  ([npgsql/efcore.pg#3916](https://github.com/npgsql/efcore.pg/issues/3916)); it reproduces with the
+  plain Npgsql provider. 4 tests. Workaround: use a typed collection (`int[]`/`List<int>`), which
+  passes.
 - **Destructive.** The harness drops every table in non-system schemas, and the integration suite
   applies migrations. Use a throwaway cluster.
 - **Single database.** Isolation between fixtures (and tenants) needs schemas or separate clusters;

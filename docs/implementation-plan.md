@@ -281,10 +281,12 @@ conflict against a live/emulated conflict is verified in Phase 6.
             AWS Discord.
       - [x] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with `Expression of type 'System.Object' cannot be used for parameter of type
-            'System.Int32'`. Reproduced on the emulator; caused by the `int` → `bigint` value
-            converter interacting with EF's `object[]` collection translation, not by DSQL.
-            Documented in `docs/live-dsql-vs-emulator.md`; typed collections (`int[]`/`List<int>`)
-            are the workaround and pass.
+            'System.Int32'`. Root cause is upstream efcore.pg (`NpgsqlArrayConverter` invokes the
+            `int → long` element converter with an `object` element; reproduces with the plain Npgsql
+            provider) — filed as
+            [npgsql/efcore.pg#3916](https://github.com/npgsql/efcore.pg/issues/3916). Not a DSQL
+            issue. Documented in `docs/live-dsql-vs-emulator.md`; typed collections (`int[]`/
+            `List<int>`) are the workaround and pass.
       - [x] Exposed null ordering as `DsqlDbContextOptionsBuilder.NullsFirst()` (the equivalent of
             efcore.pg's internal `ReverseNullOrdering`); off by default, on in the compatibility
             harness. Without it ~9 ordering-sensitive spec tests fail.
