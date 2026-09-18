@@ -214,7 +214,7 @@ behavior, not new findings.
 - **Candidate fix (upstream, `Dreamescaper/dsql-emulator`):** add a `--rules <file>` flag (and
   `DSQL_EMU_RULES` env) that loads a ruleset YAML and passes it via `proxy.Config.Ruleset`. A new
   image release would then be pinned here and the test enabled.
-- **Upstream:** not filed yet.
+- **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/5 (filed 2026-09-18)
 
 ## Findings log
 

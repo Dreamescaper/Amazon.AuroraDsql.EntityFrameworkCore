@@ -244,7 +244,9 @@ conflict against a live/emulated conflict is verified in Phase 6.
             credentials that outlast a single role session (a token's `--expires-in` does not
             outlive the assumed role).
       - [ ] Investigate `0A000: ddl and dml are not supported in the same transaction` seen live in
-            `AdHocMiscellaneousQueryNpgsqlTest` (emulator does not enforce it for the setup path).
+            `AdHocMiscellaneousQueryNpgsqlTest`. Not an emulator divergence: the emulator rejects
+            `BEGIN; CREATE TABLE ...; INSERT ...; COMMIT;` too, so this is our/harness statement
+            sequencing on the live path. Capture the exact statement pair.
       - [x] Handle DSQL schema-version conflicts (`OC001`) during bulk DDL+DML loads by retrying
             `40001` per statement (harness); the emulator does not reproduce them.
       - [x] Fold `ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY` into `CREATE TABLE` for DSQL

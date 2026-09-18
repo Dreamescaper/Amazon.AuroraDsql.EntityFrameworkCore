@@ -145,10 +145,13 @@ the script load (see below).
 ### DDL and DML in the same transaction (`0A000`)
 
 Live, `AdHocMiscellaneousQueryNpgsqlTest` reports
-`0A000: ddl and dml are not supported in the same transaction`. The same suite passes against the
-emulator, which does not enforce the separation as strictly for the harness's `EnsureCreated` +
-seed path. Open: identify the exact statement pair (likely `EnsureCreated`/history-table handling
-under the spec fixture) and either make the provider separate them or document the limitation.
+`0A000: ddl and dml are not supported in the same transaction`. This is **not** an emulator
+divergence: `0.3.0` (and `0.2.1`) reject the same thing —
+`BEGIN; CREATE TABLE ...; INSERT ...; COMMIT;` returns `0A000` on the emulator too. So the live
+failure is about statement sequencing on the harness's `EnsureCreated` + seed path, which must be
+putting DDL and DML in one transaction in a way the emulator's check does not catch (e.g. a
+pipelined batch), or the live run hit a different pair of statements. Open: capture the exact
+statement pair on a real cluster and make the provider/harness separate them.
 
 ### Transient `40001` during suite setup
 
