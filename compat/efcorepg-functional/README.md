@@ -23,7 +23,7 @@ Because the type names and namespaces match, copied test files compile without e
 
 ## Running
 
-> Pinned to emulator `0.2.1` (fixes the `v0.2.0` Npgsql protocol regression) — see
+> Pinned to emulator `0.3.0` (fixes the `v0.2.0` Npgsql protocol regression and the DDL gaps we filed) — see
 > [`../../docs/dsql-emulator-issues.md`](../../docs/dsql-emulator-issues.md). The harness also forces
 > `TZ=UTC` at startup because DSQL runs in UTC and some spec tests mix client `DateTime.Today` with
 > the server's `now()`.
@@ -31,7 +31,7 @@ Because the type names and namespaces match, copied test files compile without e
 Emulator (default):
 
 ```bash
-docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.2.1
+docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.3.0
 
 export DSQL_TEST_CONNECTION="Host=127.0.0.1;Port=55432;Username=admin;Password=token;Database=postgres;SSL Mode=Require;Pooling=false"
 

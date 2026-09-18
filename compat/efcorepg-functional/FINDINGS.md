@@ -1,7 +1,7 @@
 # efcore.pg functional-suite bring-up: findings
 
 Running a subset of `npgsql/efcore.pg` `v10.0.3` functional tests against this provider on the
-`dsql-emulator:0.2.1`. Each suite is run **one class at a time** (see "Harness limitations").
+`dsql-emulator:0.3.0`. Each suite is run **one class at a time** (see "Harness limitations").
 
 ## Results
 
@@ -22,7 +22,7 @@ couple of provider fixtures.
 | `CompositeKeysSplitQueryNpgsqlTest` | 14 | 0 | 0 | |
 | `CharacterQueryNpgsqlTest` | 4 | 0 | 0 | |
 | `NavigationTest` | 2 | 0 | 0 | |
-| `ConnectionSpecificationTest` | 2 | 0 | 11 | harness: `Northwind.sql` not shipped |
+| `ConnectionSpecificationTest` | 13 | 0 | 0 | |
 | `BuiltInDataTypesNpgsqlTest` | 0 | 6 | 33 | `hstore` (DSQL limitation) |
 | `BatchingTest` | 0 | 0 | 12 | `xid` concurrency token (DSQL limitation) |
 | `OptimisticConcurrencyNpgsqlTest` | 0 | 1 | 48 | `xid` concurrency token (DSQL limitation) |
@@ -57,8 +57,8 @@ ordering-sensitive tests fail (see follow-ups).
 | Suite | Passed | Skipped | Failed |
 | --- | ---: | ---: | ---: |
 | `NorthwindMiscellaneousQueryNpgsqlTest` | 962 | 1 | 0 |
-| `NorthwindWhereQueryNpgsqlTest` | 421 | 0 | 0 |
-| `NorthwindGroupByQueryNpgsqlTest` | 509 | 5 | 0 |
+| `NorthwindWhereQueryNpgsqlTest` | 417 | 0 | 4 | `object[]`/`List<object>` `Contains` over a widened `int` key (below) |
+| `NorthwindGroupByQueryNpgsqlTest` | 377 | 5 | 132 | `TestSqlLoggerFactory.AssertBaseline` throws `FormatException`; SQL-snapshot mismatch (pre-existing, triage below) |
 | `NorthwindEFPropertyIncludeQueryNpgsqlTest` | 238 | 0 | 0 |
 | `NorthwindIncludeNoTrackingQueryNpgsqlTest` | 236 | 0 | 0 |
 | `NorthwindSplitIncludeNoTrackingQueryNpgsqlTest` | 236 | 0 | 0 |
@@ -68,12 +68,13 @@ ordering-sensitive tests fail (see follow-ups).
 | `NorthwindAsNoTrackingQueryNpgsqlTest` | 24 | 0 | 0 |
 | `NorthwindChangeTrackingQueryNpgsqlTest` | 17 | 0 | 0 |
 | `NorthwindCompiledQueryNpgsqlTest` | 32 | 0 | 0 |
-| `NorthwindSqlQueryNpgsqlTest` | 9 | 0 | 0 |
+| `NorthwindSqlQueryNpgsqlTest` | 7 | 0 | 2 | same `AssertBaseline` path |
 | `NorthwindQueryTaggingQueryNpgsqlTest` | 9 | 0 | 0 |
 | `NorthwindAsTrackingQueryNpgsqlTest` | 6 | 0 | 0 |
 
-Every ported Northwind suite now passes. The previously failing 8 tests were inline **array
-parameters** (`Contains_with_local_*_array_closure`, `Query_with_array_parameter`, e.g.
+Most ported Northwind suites pass; the exceptions are `Where` (4, widened-key `Contains`) and
+`GroupBy`/`SqlQuery` (SQL-snapshot assertions that fail while rendering — see the triage note). The
+previously failing 8 tests were inline **array parameters** (`Contains_with_local_*_array_closure`, `Query_with_array_parameter`, e.g.
 `op ANY/ALL (array) requires array on right side`, `operator does not exist: character = jsonb`):
 primitive collections were mapped to `jsonb` for parameters as well as columns. Fixed by applying
 the `jsonb` mapping only when mapping an `IProperty`; inline parameters stay native PostgreSQL
@@ -82,6 +83,21 @@ arrays (DSQL supports arrays at query runtime).
 `ManyToManyQueryNpgsqlTest` / `ManyToManyNoTrackingQueryNpgsqlTest` were dropped: their
 provider-specific fixture fails with `Unable to determine the relationship ... UnidirectionalEntityOne.Collection`,
 i.e. EF 10.0.4 (efcore.pg v10.0.3) vs 10.0.12 model-configuration drift, unrelated to DSQL.
+
+### Triage: `NorthwindWhere` and `NorthwindGroupBy`/`NorthwindSqlQuery`
+
+- `NorthwindWhere` — 4 failures, both `object[]`/`List<object>` `Contains` over an `int` identity key
+  that the provider widens to `bigint`. EF's `object[]` collection translation trips over the value
+  converter:
+  `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`. Reproduced
+  on the emulator and live; typed collections (`int[]`/`List<int>`) pass. Full write-up in
+  [`docs/live-dsql-vs-emulator.md`](../../docs/live-dsql-vs-emulator.md).
+- `NorthwindGroupBy` (132) / `NorthwindSqlQuery` (2) — the tests fail while rendering the SQL-snapshot
+  assertion: `TestSqlLoggerFactory.AssertBaseline` throws
+  `FormatException: The input string '...NorthwindGroupByQueryNpgsqlTest.cs:line' was not in a correct
+  format` (it parses the test frame's source line number). Reproduces identically on `0.2.1` and
+  `0.3.0`, so it is **not** an emulator-version effect. Needs triage: either a real SQL diff these
+  tests hit, or a harness/PDB path artifact. Tracked in `docs/implementation-plan.md`.
 
 ## Provider bugs found and fixed (all on `main`)
 
@@ -128,7 +144,7 @@ providers, which the spec fixtures require (`UseInternalServiceProvider` skips `
 ## Reproducing
 
 ```bash
-docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.2.1
+docker run -d --name dsql-emu -p 55432:5432 ghcr.io/dreamescaper/dsql-emulator:0.3.0
 export DSQL_TEST_CONNECTION="Host=127.0.0.1;Port=55432;Username=admin;Password=token;Database=postgres;SSL Mode=Require;Pooling=false"
 dotnet test --filter "FullyQualifiedName~.FindNpgsqlTest"
 dotnet test --filter "FullyQualifiedName~.AdHocMiscellaneousQueryNpgsqlTest"

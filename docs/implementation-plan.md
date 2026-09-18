@@ -206,6 +206,12 @@ conflict against a live/emulated conflict is verified in Phase 6.
       wording are now in effect, and the `v0.2.0` Npgsql protocol regression is fixed
       ([dsql-emulator#1](https://github.com/Dreamescaper/dsql-emulator/issues/1), closed by the
       release). Suites re-verified on `0.2.1`.
+- [x] Adopted emulator `v0.3.0` (2026-09-18): it now refuses `integer`/`smallint` identity columns
+      ([#2](https://github.com/Dreamescaper/dsql-emulator/issues/2)) and `ALTER TABLE ... ADD
+      CONSTRAINT ... PRIMARY KEY`/`UNIQUE` ([#3](https://github.com/Dreamescaper/dsql-emulator/issues/3)),
+      adjudicates conflicts on a transaction's first statement, and returns DSQL-shaped job ids.
+      Re-verified: provider integration 10/10, `Find` 411/411, and every recorded suite result is
+      unchanged. Both "more permissive than DSQL" gaps we filed are closed.
 - [x] Both suites can target a real cluster (env: `DSQL_CLUSTER_ENDPOINT` + AWS creds), using the
       connector for IAM auth. Explicitly run via the manual **Live tests** workflow; PR CI stays on
       the emulator. Only execution against a real cluster remains to be exercised by the maintainer.
@@ -251,6 +257,15 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Investigate `Skip`/`Take` collection projections live (ordering vs translation).
       - [ ] Investigate `Where_contains_on_navigation` live (slow query → OCC retry/timeout).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
+      - [ ] Triage `NorthwindGroupByQueryNpgsqlTest` (132) / `NorthwindSqlQueryNpgsqlTest` (2): the
+            snapshot assertions throw `FormatException` inside `TestSqlLoggerFactory.AssertBaseline`
+            while reporting a SQL diff (frame line-number parse). Reproduces on both `0.2.1` and
+            `0.3.0`, so it is pre-existing; find the underlying SQL mismatch or the harness/PDB
+            artifact and re-baseline.
+      - [x] Narrowed emulator issue #4 (composite/row values) to a specific query shape: a
+            `LEFT JOIN LATERAL` whose target list and `WHERE` both reference the outer relation. Cut
+            down to a self-contained two-table repro and posted to the issue; DSQL mis-plans it while
+            the emulator (and stock PostgreSQL) pass. DSQL side also raised on AWS Discord.
       - [x] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with `Expression of type 'System.Object' cannot be used for parameter of type
             'System.Int32'`. Reproduced on the emulator; caused by the `int` → `bigint` value
@@ -269,9 +284,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
       ([`tools/adapt_northwind.py`](../compat/efcorepg-functional/tools/adapt_northwind.py)):
       `SERIAL`→identity `CACHE 1`, sync `CREATE INDEX`→`ASYNC`, views materialised as tables,
       foreign keys deferred to after the data load (`NOT VALID` + async validate), extensions and
-      trigger toggles removed. With that, the Northwind query suites pass ~2,900 tests
-      (Where 421, Miscellaneous 962, GroupBy 509, EFPropertyInclude 238, Include 236+236,
-      SetOperations 192, Navigations 146, …); only 8 inline-array-parameter tests fail (above).
+      trigger toggles removed. With that, the Northwind query suites pass ~2,750 tests on the
+      emulator; the failures are `Where` 4 (widened-key `Contains`) and `GroupBy` 132 / `SqlQuery` 2
+      (snapshot-assertion `FormatException`, triage above). Earlier runs of 8 inline-array-parameter
+      tests were fixed (see below).
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.

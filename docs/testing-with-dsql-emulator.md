@@ -21,16 +21,18 @@ SQL, almost all correctness can be asserted as strings without a database.
 
 ## Running the emulator
 
-Image: `ghcr.io/dreamescaper/dsql-emulator:0.2.1` (pinned in the fixture for reproducibility).
+Image: `ghcr.io/dreamescaper/dsql-emulator:0.3.0` (pinned in the fixture for reproducibility).
 
-> **Pinned to 0.2.1.** This release fixes the `v0.2.0` regression that broke Npgsql's extended
-> protocol, and adds multi-statement `CREATE INDEX ASYNC` rewriting plus exact refusal wording. See
+> **Pinned to 0.3.0.** It fixes the `v0.2.0` regression that broke Npgsql's extended protocol,
+> closes the two "more permissive than DSQL" DDL gaps we filed (`integer` identity, `ALTER TABLE ...
+> ADD CONSTRAINT ... PRIMARY KEY`/`UNIQUE`), adjudicates conflicts on a transaction's first
+> statement, and returns DSQL-shaped `CREATE INDEX ASYNC` job ids. See
 > [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 Single container serves PostgreSQL (internal `5433`) and the proxy on `5432`. Readiness is
 signalled by the log line `proxy listening`.
 
 ```bash
-docker run --rm -p 5432:5432 ghcr.io/dreamescaper/dsql-emulator:0.2.1
+docker run --rm -p 5432:5432 ghcr.io/dreamescaper/dsql-emulator:0.3.0
 ```
 
 ## Testcontainers fixture
@@ -43,7 +45,7 @@ using Npgsql;
 public sealed class DsqlEmulatorFixture : IAsyncLifetime
 {
     private readonly IContainer _container = new ContainerBuilder()
-        .WithImage("ghcr.io/dreamescaper/dsql-emulator:0.2.1") // pin a version
+        .WithImage("ghcr.io/dreamescaper/dsql-emulator:0.3.0") // pin a version
         .WithPortBinding(5432, assignRandomHostPort: true)
         .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("proxy listening"))
         .Build();

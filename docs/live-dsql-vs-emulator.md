@@ -7,6 +7,11 @@ asserting emulator behaviour as equivalent.
 For what the emulator itself gets wrong (and issues filed upstream), see
 [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
+> **Emulator 0.3.0 (2026-09-18).** The two "more permissive than DSQL" DDL divergences are closed:
+> `integer` identity columns and `ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY`/`UNIQUE` are now
+> refused like DSQL. The remaining filed divergence is the `LEFT JOIN LATERAL` planning bug
+> (emulator issue #4).
+
 ## Running against a real cluster
 
 **Preferred: AWS credentials (tokens are refreshed per connection).** The connector mints and
