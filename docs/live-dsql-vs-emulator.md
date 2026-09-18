@@ -55,6 +55,12 @@ on their own, the role session then expired, and 45 tests failed with `RetryLimi
 wrapping `08006`). For a multi-suite live run use AWS credentials, or one short window per suite and
 skip the two known-slow tests.
 
+`Where_contains_on_navigation` is the slow query: a correlated `EXISTS`/`IN` over `Customers` ×
+`Orders` (SQL in the live logs). The curated live workflow (`.github/workflows/live.yml`) excludes it
+with `--filter "FullyQualifiedName~.<suite>&FullyQualifiedName!~Where_contains_on_navigation"` so the
+session window isn't spent on a known-slow, known-failing query; run it deliberately on its own. The
+emulator runs it fine, so the exclusion only bites live runs.
+
 ## Results
 
 A first full live pass (with a short-lived token) covered the provider suite and the non-Northwind

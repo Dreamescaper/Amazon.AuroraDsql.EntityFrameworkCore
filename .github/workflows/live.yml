@@ -49,10 +49,29 @@ jobs:
 
       - name: Compatibility harness (live, curated subset)
         run: |
-          for filter in FindNpgsqlTest NorthwindWhereQueryNpgsqlTest NorthwindMiscellaneousQueryNpgsqlTest; do
+          # Where_contains_on_navigation is excluded: it takes ~5 min per variant on DSQL
+          # (correlated EXISTS/IN over Customers x Orders) and read-timeouts, burning the token's
+          # role-session window. Tracked in docs/live-dsql-vs-emulator.md.
+          for filter in \
+            FindNpgsqlTest \
+            NorthwindWhereQueryNpgsqlTest \
+            NorthwindMiscellaneousQueryNpgsqlTest \
+            NorthwindGroupByQueryNpgsqlTest \
+            NorthwindEFPropertyIncludeQueryNpgsqlTest \
+            NorthwindIncludeNoTrackingQueryNpgsqlTest \
+            NorthwindSplitIncludeNoTrackingQueryNpgsqlTest \
+            NorthwindSetOperationsQueryNpgsqlTest \
+            NorthwindNavigationsQueryNpgsqlTest \
+            NorthwindAggregateOperatorsQueryNpgsqlTest \
+            NorthwindAsNoTrackingQueryNpgsqlTest \
+            NorthwindChangeTrackingQueryNpgsqlTest \
+            NorthwindCompiledQueryNpgsqlTest \
+            NorthwindSqlQueryNpgsqlTest \
+            NorthwindQueryTaggingQueryNpgsqlTest \
+            NorthwindAsTrackingQueryNpgsqlTest; do
             dotnet test compat/efcorepg-functional/DsqlEfcorePgFunctionalTests.csproj \
               --no-build -c Release \
-              --filter "FullyQualifiedName~.$filter" \
+              --filter "FullyQualifiedName~.$filter&FullyQualifiedName!~Where_contains_on_navigation" \
               --logger "trx;LogFileName=live-$filter.trx" \
               --results-directory TestResults
           done
