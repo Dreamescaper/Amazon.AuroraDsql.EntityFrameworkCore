@@ -109,18 +109,11 @@ public class NpgsqlTestStore : RelationalTestStore
     public override DbContextOptionsBuilder AddProviderOptions(DbContextOptionsBuilder builder)
     {
         // DSQL has a single database, so all stores share TestEnvironment.DataSource.
-        var optionsBuilder = builder
-            .UseDsql(TestEnvironment.DataSource)
+        // NullsFirst matches efcore.pg's (internal) ReverseNullOrdering so ordering-sensitive tests
+        // and their AssertSql expectations behave like the Npgsql suite.
+        return builder
+            .UseDsql(TestEnvironment.DataSource, dsql => dsql.NullsFirst())
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.MultipleCollectionIncludeWarning));
-
-        // efcore.pg's ApplyConfiguration sets these; replicate them so ordering-sensitive tests
-        // behave like the Npgsql suite. ReverseNullOrdering is internal, hence reflection.
-        var npgsqlOptions = new Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.NpgsqlDbContextOptionsBuilder(optionsBuilder);
-        typeof(Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.NpgsqlDbContextOptionsBuilder)
-            .GetMethod("ReverseNullOrdering", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
-            ?.Invoke(npgsqlOptions, [true]);
-
-        return optionsBuilder;
     }
 
     private async Task<bool> CreateDatabaseAsync(Func<DbContext, Task>? clean)

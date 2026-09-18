@@ -174,6 +174,15 @@ For that branch to engage, the composed mapping must satisfy:
 - `null` elements are represented as JSON `null`.
 - Ordering and equality follow JSON semantics, not PostgreSQL array semantics.
 
+## 5.2 Null ordering
+
+PostgreSQL (and therefore DSQL) sorts `NULL`s **last** for ascending order, whereas EF Core's
+specification tests and SQL Server sort them **first**. `DsqlDbContextOptionsBuilder.NullsFirst()`
+opts into emitting `NULLS FIRST`/`NULLS LAST` by replacing `IQuerySqlGeneratorFactory` with one
+that hands `reverseNullOrdering: true` to `NpgsqlQuerySqlGenerator` (the flag is internal in
+efcore.pg). It is **off by default** so DSQL keeps native PostgreSQL semantics; the compatibility
+harness turns it on to match the `efcore.pg` suite's expectations.
+
 ## 6. Migrations
 
 - **Per-statement transactions.** Replace `IMigrationCommandExecutor` so each generated command

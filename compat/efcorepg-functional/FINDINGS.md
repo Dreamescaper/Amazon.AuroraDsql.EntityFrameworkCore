@@ -51,8 +51,8 @@ A whole-project run (all fixtures in one process) fails almost everything with `
 
 Harness changes: `NorthwindNpgsqlContext` drops its `HasPostgresExtension` calls; the Northwind
 store factory drops the ICU collation; `NpgsqlTestStore` also drops functions on reset. To match
-efcore.pg, the harness enables Npgsql's internal `ReverseNullOrdering` (via reflection) —
-**without it, ~9 ordering-sensitive tests fail** (see follow-ups).
+efcore.pg, the harness enables the provider's `NullsFirst()` option. Without it, ~9
+ordering-sensitive tests fail (see follow-ups).
 
 | Suite | Passed | Skipped | Failed |
 | --- | ---: | ---: | ---: |
@@ -112,10 +112,9 @@ providers, which the spec fixtures require (`UseInternalServiceProvider` skips `
 
 ## Provider follow-ups from Northwind
 
-- **Null ordering.** efcore.pg's `ReverseNullOrdering` (emit `NULLS FIRST`, matching the spec
-  tests' SQL Server assumptions) is internal and not exposed by this provider. The harness enables
-  it by reflection; the provider should expose an equivalent option (DSQL supports `NULLS FIRST`).
-  Without it, ordering-sensitive tests fail.
+- **Null ordering.** Resolved: `DsqlDbContextOptionsBuilder.NullsFirst()` emits `NULLS FIRST` (the
+  equivalent of efcore.pg's internal `ReverseNullOrdering`) and is what the harness uses. Off by
+  default to keep native PostgreSQL semantics.
 ## Harness limitations (not provider bugs)
 
 - **Single database.** The spec suites assume a separate database per fixture

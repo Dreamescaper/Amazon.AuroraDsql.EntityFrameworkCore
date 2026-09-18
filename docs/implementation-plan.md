@@ -252,9 +252,9 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
       - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with an EF expression-type error; investigate or document as unsupported.
-      - [ ] Expose null-ordering (efcore.pg's `ReverseNullOrdering`, internal) or default to
-            `NULLS FIRST`; without it ~9 ordering-sensitive spec tests fail. DSQL supports
-            `NULLS FIRST`/`LAST`.
+      - [x] Exposed null ordering as `DsqlDbContextOptionsBuilder.NullsFirst()` (the equivalent of
+            efcore.pg's internal `ReverseNullOrdering`); off by default, on in the compatibility
+            harness. Without it ~9 ordering-sensitive spec tests fail.
       - [x] Inline primitive-collection parameters stay native PostgreSQL arrays; only stored
             columns map to `jsonb` (`DsqlTypeMappingSource` applies the jsonb mapping only when
             mapping an `IProperty`). DSQL supports arrays at query runtime. Fixed the 8 Northwind

@@ -46,6 +46,9 @@ await context.ExecuteInTransactionAsync(async ct =>
 
 Configuration: `options.UseDsql(dataSource, dsql => dsql.EnableIdentityColumns().SetMaxRetryCount(3))`.
 
+`dsql.NullsFirst()` opts into `NULLS FIRST` so nulls sort first, as EF/SQL Server do by default
+(PostgreSQL, and therefore DSQL, sorts nulls last); it is off by default.
+
 > **Package id note:** this project currently uses the same id (`Amazon.AuroraDsql.EntityFrameworkCore`)
 > as the AWS Labs adapter. Both expose `UseDsql` and cannot be referenced together; the id must be
 > resolved before any NuGet release. See [`docs/comparison-aurora-dsql-orms.md`](docs/comparison-aurora-dsql-orms.md).

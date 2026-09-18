@@ -1,10 +1,12 @@
 using Amazon.AuroraDsql.EntityFrameworkCore.Infrastructure;
 using Amazon.AuroraDsql.EntityFrameworkCore.Metadata;
 using Amazon.AuroraDsql.EntityFrameworkCore.Migrations;
+using Amazon.AuroraDsql.EntityFrameworkCore.Query;
 using Amazon.AuroraDsql.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -38,6 +40,8 @@ public static class DsqlServiceCollectionExtensions
         serviceCollection.Replace(ServiceDescriptor.Scoped<INpgsqlRelationalConnection, DsqlRelationalConnection>());
         serviceCollection.Replace(
             ServiceDescriptor.Singleton<IRelationalTransactionFactory, DsqlRelationalTransactionFactory>());
+        serviceCollection.Replace(
+            ServiceDescriptor.Scoped<IQuerySqlGeneratorFactory, DsqlQuerySqlGeneratorFactory>());
 
         return serviceCollection;
     }

@@ -22,6 +22,7 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
         IdentityCacheSize = copyFrom.IdentityCacheSize;
         MaxRetryCount = copyFrom.MaxRetryCount;
         MaxRetryDelay = copyFrom.MaxRetryDelay;
+        NullsFirst = copyFrom.NullsFirst;
     }
 
     public DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
@@ -39,6 +40,11 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
 
     public DsqlOptionsExtension WithRetry(int maxRetryCount, TimeSpan maxRetryDelay)
         => new(this) { MaxRetryCount = maxRetryCount, MaxRetryDelay = maxRetryDelay };
+
+    internal bool NullsFirst { get; private init; }
+
+    public DsqlOptionsExtension WithNullsFirst(bool nullsFirst)
+        => new(this) { NullsFirst = nullsFirst };
 
     public void ApplyServices(IServiceCollection services)
     {
@@ -70,14 +76,16 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
                 Extension.UseIdentityColumns,
                 Extension.IdentityCacheSize,
                 Extension.MaxRetryCount,
-                Extension.MaxRetryDelay);
+                Extension.MaxRetryDelay,
+                Extension.NullsFirst);
 
         public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
             => other is ExtensionInfo otherInfo
                 && Extension.UseIdentityColumns == otherInfo.Extension.UseIdentityColumns
                 && Extension.IdentityCacheSize == otherInfo.Extension.IdentityCacheSize
                 && Extension.MaxRetryCount == otherInfo.Extension.MaxRetryCount
-                && Extension.MaxRetryDelay == otherInfo.Extension.MaxRetryDelay;
+                && Extension.MaxRetryDelay == otherInfo.Extension.MaxRetryDelay
+                && Extension.NullsFirst == otherInfo.Extension.NullsFirst;
 
         public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
         {
@@ -85,6 +93,7 @@ public sealed class DsqlOptionsExtension : IDbContextOptionsExtension
             debugInfo["AuroraDsql:IdentityCacheSize"] = Extension.IdentityCacheSize.ToString();
             debugInfo["AuroraDsql:MaxRetryCount"] = Extension.MaxRetryCount.ToString();
             debugInfo["AuroraDsql:MaxRetryDelay"] = Extension.MaxRetryDelay.ToString();
+            debugInfo["AuroraDsql:NullsFirst"] = Extension.NullsFirst.ToString();
         }
     }
 }

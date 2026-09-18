@@ -58,6 +58,16 @@ public class DsqlDbContextOptionsBuilder
     }
 
     /// <summary>
+    /// Emits <c>NULLS FIRST</c> for orderings so nulls sort first, as EF and SQL Server do by
+    /// default (PostgreSQL sorts nulls last).
+    /// </summary>
+    public DsqlDbContextOptionsBuilder NullsFirst(bool nullsFirst = true)
+    {
+        Options = Options.WithNullsFirst(nullsFirst);
+        return this;
+    }
+
+    /// <summary>
     /// Enables identity-column support for <see cref="long" /> primary keys. DSQL accepts a cache
     /// size of either <c>1</c> or at least <see cref="DefaultIdentityCacheSize" />.
     /// </summary>
