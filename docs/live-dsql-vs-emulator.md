@@ -83,11 +83,22 @@ expired:
 | `NorthwindSplitIncludeNoTrackingQueryNpgsqlTest` | **236/236** |
 | `NorthwindEFPropertyIncludeQueryNpgsqlTest` | **238/238** |
 
-That is 1,556 tests with 0 failures. `NorthwindAggregateOperators`, `NorthwindGroupBy`,
-`NorthwindWhere` and `NorthwindMiscellaneous` were attempted next, but the STS session behind that
-token expired (~15 minutes this time), after which every command returned `08006` and
-`DsqlExecutionStrategy` retried it 6×; all 34 observed failures were that, with no genuine
-assertion/SQL diff. Those four still need a credentials-based run (or one short window each).
+That is 1,556 tests with 0 failures. A third pass (fresh token) ran the four largest suites one at a
+time, smallest first:
+
+| Suite | Live cluster |
+| --- | ---: |
+| `NorthwindWhereQueryNpgsqlTest` (nav excluded) | 415/419 (4 failed — `object[]` `Contains`) |
+| `NorthwindAggregateOperatorsQueryNpgsqlTest` | **422/422** |
+| `NorthwindGroupByQueryNpgsqlTest` | **509/514** (5 skipped) |
+| `NorthwindMiscellaneousQueryNpgsqlTest` | 954/963 (8 failed — see below) |
+
+`Miscellaneous`'s 8 failures are 2 × `Complex_nested_query...` (`42804`, the `LEFT JOIN LATERAL`
+planner bug, emulator issue #4) and 6 × `Projection_{skip,take,skip_take}_collection_projection`
+(`Assert.Equal` row-count mismatches, the open ordering-vs-translation question). Together the three
+passes cover every ported Northwind suite live; the only remaining live failures are the 4
+`object[]` `Contains`, the 2 `#4` queries, and the 6 `Skip`/`Take` projections, plus the two slow
+`Where_contains_on_navigation` tests that are excluded.
 
 | Suite | Emulator | Live cluster |
 | --- | --- | --- |
@@ -100,14 +111,18 @@ assertion/SQL diff. Those four still need a credentials-based run (or one short 
 | `NavigationTest` | 2/2 | **2/2** |
 | `AdHocMiscellaneousQueryNpgsqlTest` | 69/71 (2 skipped) | **65/71** (4 failed, 2 skipped)² |
 | `AdHocNavigationsQueryNpgsqlTest` | 24/25 | **24/25** (1 failed)³ |
-| `NorthwindWhereQueryNpgsqlTest` | 417/421 | 415/421 |
-| `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 (0 failed) | 954/963 (8 failed) |
+| `NorthwindWhereQueryNpgsqlTest` | 417/421 | 415/421⁴ |
+| `NorthwindMiscellaneousQueryNpgsqlTest` | 962/963 (0 failed) | 954/963 (8 failed)⁵ |
+| `NorthwindGroupByQueryNpgsqlTest` | 509/514 (5 skipped) | 509/514 (5 skipped) |
 | `NorthwindSetOperationsQueryNpgsqlTest` | 192/192 | 192/192 |
 | `NorthwindAggregateOperatorsQueryNpgsqlTest` | 422/422 | 422/422 |
 
 ¹ Failed once with a transient `40001`, passed on retry — see below.
 ² `0A000: ddl and dml are not supported in the same transaction` and `40001` conflicts — see below.
 ³ The model validator rejects a `bytea` index (`Comment.BlogName`), same as on the emulator.
+⁴ 4 failures, all `object[]`/`List<object>` `Contains` over a widened `int` key (also on the
+  emulator); the 2 `Where_contains_on_navigation` tests are excluded live (see above).
+⁵ 2 × `Complex_nested_query...` (`42804`, issue #4) and 6 × `Projection_{skip,take,skip_take}_collection_projection`.
 
 The provider integration suite passes unchanged on a real cluster: migrations (`CREATE TABLE`,
 `CREATE INDEX ASYNC`, `ALTER TABLE ... ADD CONSTRAINT ... NOT VALID` + `ALTER TABLE ASYNC ...

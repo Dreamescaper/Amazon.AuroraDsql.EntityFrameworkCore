@@ -239,13 +239,13 @@ conflict against a live/emulated conflict is verified in Phase 6.
             `CompositeKeys` 14/14, `FunkyData` 42/42, `Character` 4/4, `Navigation` 2/2,
             `AdHocMiscellaneous` 65/71, `AdHocNavigations` 24/25. See
             [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md).
-      - [ ] Run the Northwind suites live. Progress (2026-09-18): 12 of 16 suites pass live —
-            `Find` 411/411 and the Northwind tracking/query/cache/include suites 1,145/1,145, i.e.
-            1,556 tests, 0 failures (see [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md)).
-            `AggregateOperators`, `GroupBy`, `Where`, `Miscellaneous` are still pending: the STS
-            session behind the presigned token expired (~15 min in) and the run aborted on `08006`,
-            not on any diff. Needs AWS credentials (connector refreshes tokens) or one short window
-            per suite; the slow `Where_contains_on_navigation` is excluded for this.
+      - [x] Run the Northwind suites live (2026-09-18, across a few token windows). Every ported
+            suite was executed; results in
+            [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md). The only live failures are the
+            known ones: `Where` 4 × `object[]` `Contains` (also on the emulator), `Miscellaneous`
+            2 × issue #4 `LEFT JOIN LATERAL` + 6 × `Skip`/`Take` collection projections. The two
+            slow `Where_contains_on_navigation` tests (~5 min each, read timeouts) are excluded
+            from live runs (`.github/workflows/live.yml`).
       - [ ] Investigate `0A000: ddl and dml are not supported in the same transaction` seen live in
             `AdHocMiscellaneousQueryNpgsqlTest`. Not an emulator divergence: the emulator rejects
             `BEGIN; CREATE TABLE ...; INSERT ...; COMMIT;` too, so this is our/harness statement
