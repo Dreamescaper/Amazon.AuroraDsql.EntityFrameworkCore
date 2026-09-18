@@ -46,6 +46,15 @@ a long token only helps while that session is valid; and the token is not refres
 reused. Never commit a token. For an unattended full run, prefer credentials so the connector
 refreshes tokens per connection.
 
+A presigned-token run that outlives the role session **does not fail fast**: every subsequent
+command gets `08006 unable to accept connection, access denied` (`Hint: The security token ... has
+expired`), Npgsql classifies that as transient, and `DsqlExecutionStrategy` retries it six times
+with exponential backoff. A full `NorthwindWhere` run therefore spends ~1 minute per remaining test
+and looks hung (observed 2026-09-18: the two `Where_contains_on_navigation` tests take ~10 minutes
+on their own, the role session then expired, and 45 tests failed with `RetryLimitExceededException`
+wrapping `08006`). For a multi-suite live run use AWS credentials, or one short window per suite and
+skip the two known-slow tests.
+
 ## Results
 
 A first full live pass (with a short-lived token) covered the provider suite and the non-Northwind
