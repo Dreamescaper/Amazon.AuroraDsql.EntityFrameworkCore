@@ -57,6 +57,31 @@ internal sealed class DsqlMigrationsSqlGenerator : NpgsqlMigrationsSqlGenerator
                 + "Add a new column and migrate the data, or drop and re-add the column.");
         }
 
+        if (operation.OldColumn?.IsNullable == true && !operation.IsNullable)
+        {
+            throw new InvalidOperationException(
+                $"Aurora DSQL does not support ALTER COLUMN ... SET NOT NULL "
+                + $"('{operation.Table}'.'{operation.Name}'). Add a new NOT NULL column and backfill "
+                + "it, or enforce the constraint in the application.");
+        }
+
+        if (operation[NpgsqlAnnotationNames.ValueGenerationStrategy] is NpgsqlValueGenerationStrategy.IdentityAlwaysColumn
+                or NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+        {
+            // DSQL identity columns must be bigint (int keys are widened to bigint by the model
+            // convention, so this only triggers for an explicitly typed column).
+            var storeType = newType ?? operation.ClrType.Name;
+            if (operation.ClrType != typeof(long)
+                && !(newType is not null && newType.Contains("bigint", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    $"Aurora DSQL identity columns must be bigint, but '{operation.Table}'.'{operation.Name}' "
+                    + $"is '{storeType}'.");
+            }
+
+            ApplyIdentityCache(operation);
+        }
+
         base.Generate(operation, model, builder);
     }
 

@@ -333,6 +333,54 @@ public class DsqlMigrationsSqlGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void Alter_column_set_not_null_is_rejected()
+    {
+        using var context = CreateContext();
+
+        var operation = new AlterColumnOperation
+        {
+            Name = "Quantity",
+            Table = "Widgets",
+            ClrType = typeof(int),
+            ColumnType = "integer",
+            IsNullable = false,
+            OldColumn = new AddColumnOperation
+            {
+                ClrType = typeof(int),
+                ColumnType = "integer",
+                IsNullable = true,
+            },
+        };
+
+        var exception = Assert.Throws<InvalidOperationException>(() => Generate(context, operation));
+        Assert.Contains("SET NOT NULL", exception.Message);
+    }
+
+    [Fact]
+    public void Alter_column_drop_not_null_is_allowed()
+    {
+        using var context = CreateContext();
+
+        var operation = new AlterColumnOperation
+        {
+            Name = "Quantity",
+            Table = "Widgets",
+            ClrType = typeof(int),
+            ColumnType = "integer",
+            IsNullable = true,
+            OldColumn = new AddColumnOperation
+            {
+                ClrType = typeof(int),
+                ColumnType = "integer",
+                IsNullable = false,
+            },
+        };
+
+        var sql = string.Join("\n", Generate(context, operation).Select(c => c.CommandText));
+        Assert.Contains("DROP NOT NULL", sql);
+    }
+
+    [Fact]
     public void Concurrent_index_is_rejected()
     {
         using var context = CreateContext();

@@ -120,9 +120,9 @@ for `Contains`, `Any` and element access; integration tests round-trip arrays an
       - [x] Identity cache injection for `long` identity columns when `EnableIdentityColumns` is set.
       - [x] `AddForeignKeyOperation` → `NOT VALID`, then `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT`
             (inline foreign keys in `CREATE TABLE` are unaffected).
-      - [x] Reject unsupported migration operations: `ALTER COLUMN ... TYPE` is refused with an
-            actionable message. (Mapping the full `AlterColumnOperation` surface onto DSQL's
-            `ALTER TABLE` subset remains a follow-up.)
+      - [x] `ALTER COLUMN` surface mapped to DSQL's supported subset: `TYPE` changes and
+            `SET NOT NULL` (DSQL only supports `DROP NOT NULL`) are refused with actionable messages;
+            identity changes must be `bigint` and get an explicit `CACHE`.
 - [x] `DsqlHistoryRepository : NpgsqlHistoryRepository` without `LOCK TABLE ... ACCESS EXCLUSIVE`;
       returns a no-op lock and `LockReleaseBehavior.Explicit` (migrations are not serialized by a DB lock).
 - [x] `DsqlMigrationCommandExecutor` running each command in its own implicit transaction
