@@ -193,6 +193,49 @@ public class DsqlIntegrationTests
     }
 
     [Fact]
+    public async Task SaveChanges_over_the_row_limit_reports_54000()
+    {
+        await using var context = _fixture.CreateContext();
+
+        // DSQL caps a transaction at 3,000 mutated rows; the statement that crosses the limit fails
+        // with SQLSTATE 54000 and aborts the transaction. EF batches the inserts but keeps them in
+        // one transaction, so the cap is hit inside SaveChanges and must surface unchanged.
+        for (var i = 0; i < 3_001; i++)
+        {
+            context.Owners.Add(new Owner { Id = Guid.NewGuid(), Name = $"over-limit-{i}" });
+        }
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        var postgresException = Assert.IsType<PostgresException>(exception.InnerException);
+        Assert.Equal("54000", postgresException.SqlState);
+
+        // The aborted transaction leaves nothing behind.
+        await using var verify = _fixture.CreateContext();
+        Assert.False(await verify.Owners.AnyAsync(o => o.Name.StartsWith("over-limit-")));
+    }
+
+    [Fact]
+    public async Task Row_limit_is_respected_when_chunking_across_transactions()
+    {
+        const int total = 3_001;
+        const int chunkSize = 1_000;
+
+        for (var offset = 0; offset < total; offset += chunkSize)
+        {
+            await using var context = _fixture.CreateContext();
+            for (var i = offset; i < Math.Min(offset + chunkSize, total); i++)
+            {
+                context.Owners.Add(new Owner { Id = Guid.NewGuid(), Name = $"chunked-{i}" });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        await using var verify = _fixture.CreateContext();
+        Assert.Equal(total, await verify.Owners.CountAsync(o => o.Name.StartsWith("chunked-")));
+    }
+
+    [Fact]
     public async Task Generated_migration_ddl_is_idempotent()
     {
         await using var context = _fixture.CreateContext();

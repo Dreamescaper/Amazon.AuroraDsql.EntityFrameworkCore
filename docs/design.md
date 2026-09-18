@@ -292,7 +292,9 @@ server error.** Splitting automatically would change transactional semantics and
 without rewriting the SQL EF generates, which the design forbids (§3–4). `DsqlExecutionStrategy`
 retries only `40001`, so a `54000` failure is never masked by retries. Applications should chunk
 writes so each `SaveChanges` commits fewer than 3,000 rows and keep transactions short; the
-harness's adapted Northwind loader follows the same rule (batched inserts).
+harness's adapted Northwind loader follows the same rule (batched inserts). Covered by integration
+tests: a `SaveChanges` of 3,001 rows surfaces `54000` unchanged, and chunking 3,001 rows across
+transactions succeeds.
 
 Other hard limits worth knowing: 10 schemas per database, 24 indexes per table, 8 columns per
 index, 10,000 connections per cluster, 60-minute connection lifetime, and 15-minute token expiry.

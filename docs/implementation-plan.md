@@ -198,10 +198,14 @@ conflict against a live/emulated conflict is verified in Phase 6.
 - [x] FK `NOT VALID` + `ALTER TABLE ASYNC ... VALIDATE CONSTRAINT` applied and enforced against
       the emulator (valid insert succeeds, missing principal fails with SQLSTATE `23503`).
 - [x] Navigation properties (`Include` across the FK) round-trip.
+- [x] Integration coverage for the 3,000-row transaction cap: `SaveChanges` of 3,001 rows surfaces
+      SQLSTATE `54000` unchanged (the emulator's per-transaction trigger raises it), and chunking
+      3,001 rows across transactions succeeds. Batch-`SaveChanges` limits are covered by the same
+      pair.
 - [ ] Remaining integration coverage: induced OCC conflict retry (**blocked**: the emulator's
       conflict injection needs a custom ruleset it does not expose; see
-      [`dsql-emulator-issues.md`](dsql-emulator-issues.md)), 3,000-row cap, batch `SaveChanges`
-      limits.
+      [`dsql-emulator-issues.md`](dsql-emulator-issues.md) and
+      [dsql-emulator#5](https://github.com/Dreamescaper/dsql-emulator/issues/5)).
 - [x] Adopted emulator `v0.2.1`: multi-statement `CREATE INDEX ASYNC` rewriting and exact refusal
       wording are now in effect, and the `v0.2.0` Npgsql protocol regression is fixed
       ([dsql-emulator#1](https://github.com/Dreamescaper/dsql-emulator/issues/1), closed by the
