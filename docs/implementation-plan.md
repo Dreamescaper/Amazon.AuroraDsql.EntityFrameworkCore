@@ -259,11 +259,12 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Investigate `Skip`/`Take` collection projections live (ordering vs translation).
       - [ ] Investigate `Where_contains_on_navigation` live (slow query → OCC retry/timeout).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
-      - [ ] Triage `NorthwindGroupByQueryNpgsqlTest` (132) / `NorthwindSqlQueryNpgsqlTest` (2): the
-            snapshot assertions throw `FormatException` inside `TestSqlLoggerFactory.AssertBaseline`
-            while reporting a SQL diff (frame line-number parse). Reproduces on both `0.2.1` and
-            `0.3.0`, so it is pre-existing; find the underlying SQL mismatch or the harness/PDB
-            artifact and re-baseline.
+      - [x] Triage `NorthwindGroupByQueryNpgsqlTest` (132) / `NorthwindSqlQueryNpgsqlTest` (2):
+            expected SQL-snapshot drift from the `int`→`bigint` widening (`sum(...)::int`→`::bigint`,
+            widened join cast), masked by `TestSqlLoggerFactory.AssertBaseline` throwing
+            `FormatException` when the repo path contains a space. Re-baselined via
+            `EF_TEST_REWRITE_BASELINES=1` from a no-space harness copy; suites now pass
+            (`GroupBy` 509/5/0, `SqlQuery` 9/0/0).
       - [x] Narrowed emulator issue #4 (composite/row values) to a specific query shape: a
             `LEFT JOIN LATERAL` whose target list and `WHERE` both reference the outer relation. Cut
             down to a self-contained two-table repro and posted to the issue; DSQL mis-plans it while
@@ -286,10 +287,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
       ([`tools/adapt_northwind.py`](../compat/efcorepg-functional/tools/adapt_northwind.py)):
       `SERIAL`→identity `CACHE 1`, sync `CREATE INDEX`→`ASYNC`, views materialised as tables,
       foreign keys deferred to after the data load (`NOT VALID` + async validate), extensions and
-      trigger toggles removed. With that, the Northwind query suites pass ~2,750 tests on the
-      emulator; the failures are `Where` 4 (widened-key `Contains`) and `GroupBy` 132 / `SqlQuery` 2
-      (snapshot-assertion `FormatException`, triage above). Earlier runs of 8 inline-array-parameter
-      tests were fixed (see below).
+      trigger toggles removed. With that, the Northwind query suites pass ~2,890 tests on the
+      emulator; the only remaining failures are `Where` 4 (widened-key `Contains`). The `GroupBy`
+      baselines were re-baselined to the widened-key `bigint` casts (see triage above). Earlier runs
+      of 8 inline-array-parameter tests were fixed (see below).
 - [x] Log all emulator problems in [`dsql-emulator-issues.md`](dsql-emulator-issues.md).
 
 See [`testing-with-dsql-emulator.md`](testing-with-dsql-emulator.md) for the fixture and rules.

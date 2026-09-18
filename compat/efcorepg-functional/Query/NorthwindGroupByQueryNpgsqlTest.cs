@@ -122,7 +122,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -134,7 +134,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -206,7 +206,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -218,7 +218,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -230,7 +230,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", o."CustomerID" AS "Key", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", o."CustomerID" AS "Key", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -242,7 +242,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key1", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key1", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -290,7 +290,7 @@ GROUP BY o."OrderDate"
 SELECT CASE
     WHEN o."OrderDate" IS NULL THEN 'is null'
     ELSE 'is not null'
-END AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+END AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."OrderDate"
 """);
@@ -366,7 +366,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -378,7 +378,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -390,7 +390,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -462,7 +462,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -474,7 +474,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -546,7 +546,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT o."CustomerID", o."EmployeeID", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID", o."EmployeeID", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -558,7 +558,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT o."CustomerID", o."EmployeeID", COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT o."CustomerID", o."EmployeeID", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -570,7 +570,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", o."EmployeeID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", o."EmployeeID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -582,7 +582,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", o."EmployeeID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", o."EmployeeID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -594,7 +594,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", o."CustomerID", o."EmployeeID"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", o."CustomerID", o."EmployeeID"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -618,7 +618,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", o."CustomerID" AS "CustomerId", o."EmployeeID" AS "EmployeeId", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", o."CustomerID" AS "CustomerId", o."EmployeeID" AS "EmployeeId", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -630,7 +630,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", o."CustomerID", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID", o."EmployeeID"
 """);
@@ -642,7 +642,7 @@ GROUP BY o."CustomerID", o."EmployeeID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum", min(o0."OrderID") AS "Min", o0."Key", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum", min(o0."OrderID") AS "Min", o0."Key", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -657,7 +657,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -672,7 +672,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -687,7 +687,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -702,7 +702,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum", min(o0."OrderID") AS "Min", o0."Key" AS "Random", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum", min(o0."OrderID") AS "Min", o0."Key" AS "Random", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -718,7 +718,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum", o0."Key"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum", o0."Key"
 FROM (
     SELECT o."OrderID", 2 AS "Key"
     FROM "Orders" AS o
@@ -733,7 +733,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT min(o0."OrderDate") FILTER (WHERE 1 = o0."Key") AS "Min", max(o0."OrderDate") FILTER (WHERE 1 = o0."Key") AS "Max", COALESCE(sum(o0."OrderID") FILTER (WHERE 1 = o0."Key"), 0)::int AS "Sum", avg(o0."OrderID"::double precision) FILTER (WHERE 1 = o0."Key") AS "Average"
+SELECT min(o0."OrderDate") FILTER (WHERE 1 = o0."Key") AS "Min", max(o0."OrderDate") FILTER (WHERE 1 = o0."Key") AS "Max", COALESCE(sum(o0."OrderID") FILTER (WHERE 1 = o0."Key"), 0)::bigint AS "Sum", avg(o0."OrderID"::double precision) FILTER (WHERE 1 = o0."Key") AS "Average"
 FROM (
     SELECT o."OrderID", o."OrderDate", 1 AS "Key"
     FROM "Orders" AS o
@@ -751,7 +751,7 @@ ORDER BY o0."Key" NULLS FIRST
             """
 @a='2'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum", min(o0."OrderID") AS "Min", o0."Key", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum", min(o0."OrderID") AS "Min", o0."Key", max(o0."OrderID") AS "Max", avg(o0."OrderID"::double precision) AS "Avg"
 FROM (
     SELECT o."OrderID", @a AS "Key"
     FROM "Orders" AS o
@@ -768,7 +768,7 @@ GROUP BY o0."Key"
             """
 @a='2'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", @a AS "Key"
     FROM "Orders" AS o
@@ -785,7 +785,7 @@ GROUP BY o0."Key"
             """
 @a='2'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", @a AS "Key"
     FROM "Orders" AS o
@@ -802,7 +802,7 @@ GROUP BY o0."Key"
             """
 @a='2'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", @a AS "Key"
     FROM "Orders" AS o
@@ -819,7 +819,7 @@ GROUP BY o0."Key"
             """
 @a='2'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum", o0."Key"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum", o0."Key"
 FROM (
     SELECT o."OrderID", @a AS "Key"
     FROM "Orders" AS o
@@ -914,7 +914,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -926,7 +926,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -998,7 +998,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1010,7 +1010,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."EmployeeID") AS "Min", max(o."EmployeeID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."EmployeeID") AS "Min", max(o."EmployeeID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1022,7 +1022,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID" + 1), 0)::int
+SELECT COALESCE(sum(o."OrderID" + 1), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1034,7 +1034,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID" + 1), 0)::int
+SELECT COALESCE(sum(o."OrderID" + 1), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1046,7 +1046,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID" + 1), 0)::int
+SELECT COALESCE(sum(o."OrderID" + 1), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1058,7 +1058,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID" + 1), 0)::int
+SELECT COALESCE(sum(o."OrderID" + 1), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1079,7 +1079,7 @@ SELECT o."OrderID", COALESCE(sum(CASE
         WHEN o."OrderID" > 1000 THEN o."OrderID"
         ELSE -o."OrderID"
     END
-END), 0)::int AS "Aggregate"
+END), 0)::bigint AS "Aggregate"
 FROM "Orders" AS o
 GROUP BY o."OrderID"
 """);
@@ -1110,7 +1110,7 @@ GROUP BY o0."OrderMonth", o0."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint
 FROM (
     SELECT o."OrderID", 1 AS "Key"
     FROM "Orders" AS o
@@ -1125,7 +1125,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o0."OrderID"), 0)::int AS "Sum"
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint AS "Sum"
 FROM (
     SELECT o."OrderID", 1 AS "Key"
     FROM "Orders" AS o
@@ -1140,7 +1140,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -1465,7 +1465,7 @@ GROUP BY u."City"
 
         AssertSql(
             """
-SELECT min(o."OrderDate") AS "Min", max(o."OrderDate") AS "Max", COALESCE(sum(o."OrderID"), 0)::int AS "Sum", avg(o."OrderID"::double precision) AS "Avg"
+SELECT min(o."OrderDate") AS "Min", max(o."OrderDate") AS "Max", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 WHERE o."OrderID" < 10300
 GROUP BY o."CustomerID"
@@ -1522,8 +1522,8 @@ GROUP BY s."Key"
 
         AssertSql(
             """
-SELECT o0."Key" AS "Month", COALESCE(sum(o0."OrderID"), 0)::int AS "Total", (
-    SELECT COALESCE(sum(o1."OrderID"), 0)::int
+SELECT o0."Key" AS "Month", COALESCE(sum(o0."OrderID"), 0)::bigint AS "Total", (
+    SELECT COALESCE(sum(o1."OrderID"), 0)::bigint
     FROM "Orders" AS o1
     WHERE date_part('month', o1."OrderDate")::int = o0."Key" OR (o1."OrderDate" IS NULL AND o0."Key" IS NULL)) AS "Payment"
 FROM (
@@ -1582,7 +1582,7 @@ ORDER BY count(*)::int NULLS FIRST, o."CustomerID" NULLS FIRST
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 ORDER BY count(*)::int NULLS FIRST, o."CustomerID" NULLS FIRST
@@ -1745,7 +1745,7 @@ HAVING count(*)::int > 0
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", count(*)::int AS "Count", COALESCE(sum(o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", count(*)::int AS "Count", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 HAVING count(*)::int > 4
@@ -1941,7 +1941,7 @@ INNER JOIN (
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
+SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", min(o."OrderID") AS "Min", max(o."OrderID") AS "Max", avg(o."OrderID"::double precision) AS "Avg"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -2135,7 +2135,7 @@ GROUP BY o."CustomerID"
 
         AssertSql(
             """
-SELECT COALESCE(sum(o."OrderID") FILTER (WHERE o."OrderID" < 10300), 0)::int
+SELECT COALESCE(sum(o."OrderID") FILTER (WHERE o."OrderID" < 10300), 0)::bigint
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -2210,10 +2210,10 @@ GROUP BY o."CustomerID"
 SELECT o."CustomerID", COALESCE(sum(CASE
     WHEN o."OrderID" < 11000 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "TenK", COALESCE(sum(CASE
+END), 0)::bigint AS "TenK", COALESCE(sum(CASE
     WHEN o."OrderID" >= 11000 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "EleventK"
+END), 0)::bigint AS "EleventK"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -2228,10 +2228,10 @@ GROUP BY o."CustomerID"
 SELECT o."CustomerID", COALESCE(sum(CASE
     WHEN o."OrderID" < 11000 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "TenK", COALESCE(sum(CASE
+END), 0)::bigint AS "TenK", COALESCE(sum(CASE
     WHEN o."OrderID" >= 11000 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "EleventK"
+END), 0)::bigint AS "EleventK"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -2474,7 +2474,7 @@ FROM (
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", avg(DISTINCT o."OrderID"::double precision) AS "Average", count(DISTINCT o."EmployeeID")::int AS "Count", count(DISTINCT o."EmployeeID") AS "LongCount", max(o."OrderDate") AS "Max", min(o."OrderDate") AS "Min", COALESCE(sum(DISTINCT o."OrderID"), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", avg(DISTINCT o."OrderID"::double precision) AS "Average", count(DISTINCT o."EmployeeID")::int AS "Count", count(DISTINCT o."EmployeeID") AS "LongCount", max(o."OrderDate") AS "Max", min(o."OrderDate") AS "Min", COALESCE(sum(DISTINCT o."OrderID"), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -2512,7 +2512,7 @@ GROUP BY o."CustomerID"
             """
 SELECT min(o0.c)
 FROM (
-    SELECT COALESCE(sum(o."OrderID"), 0)::int AS c
+    SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS c
     FROM "Orders" AS o
     GROUP BY o."CustomerID"
 ) AS o0
@@ -2521,7 +2521,7 @@ FROM (
             """
 SELECT max(o0.c)
 FROM (
-    SELECT COALESCE(sum(o."OrderID"), 0)::int AS c
+    SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS c
     FROM "Orders" AS o
     GROUP BY o."CustomerID"
 ) AS o0
@@ -2552,7 +2552,7 @@ SELECT NOT EXISTS (
     SELECT 1
     FROM "Orders" AS o
     GROUP BY o."CustomerID"
-    HAVING COALESCE(sum(o."OrderID"), 0)::int < 0)
+    HAVING COALESCE(sum(o."OrderID"), 0)::bigint < 0)
 """);
     }
 
@@ -2794,7 +2794,7 @@ GROUP BY o0."Key"
 
         AssertSql(
             """
-SELECT o0."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Aggregate"
+SELECT o0."CustomerID" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Aggregate"
 FROM "Order Details" AS o
 INNER JOIN "Orders" AS o0 ON o."OrderID" = o0."OrderID"
 GROUP BY o0."CustomerID"
@@ -2807,7 +2807,7 @@ GROUP BY o0."CustomerID"
 
         AssertSql(
             """
-SELECT c."Country" AS "Key", COALESCE(sum(o."OrderID"), 0)::int AS "Aggregate"
+SELECT c."Country" AS "Key", COALESCE(sum(o."OrderID"), 0)::bigint AS "Aggregate"
 FROM "Order Details" AS o
 INNER JOIN "Orders" AS o0 ON o."OrderID" = o0."OrderID"
 LEFT JOIN "Customers" AS c ON o0."CustomerID" = c."CustomerID"
@@ -2825,7 +2825,7 @@ GROUP BY c."Country"
 
         AssertSql(
             """
-SELECT o0."OrderID", o0."CustomerID", o0."EmployeeID", o0."OrderDate", COALESCE(sum(o."OrderID"), 0)::int AS "Aggregate"
+SELECT o0."OrderID", o0."CustomerID", o0."EmployeeID", o0."OrderDate", COALESCE(sum(o."OrderID"), 0)::bigint AS "Aggregate"
 FROM "Order Details" AS o
 INNER JOIN "Orders" AS o0 ON o."OrderID" = o0."OrderID"
 GROUP BY o0."OrderID", o0."CustomerID", o0."EmployeeID", o0."OrderDate"
@@ -2838,7 +2838,7 @@ GROUP BY o0."OrderID", o0."CustomerID", o0."EmployeeID", o0."OrderDate"
 
         AssertSql(
             """
-SELECT c."CustomerID", c."Address", c."City", c."CompanyName", c."ContactName", c."ContactTitle", c."Country", c."Fax", c."Phone", c."PostalCode", c."Region", COALESCE(sum(o."OrderID"), 0)::int AS "Aggregate"
+SELECT c."CustomerID", c."Address", c."City", c."CompanyName", c."ContactName", c."ContactTitle", c."Country", c."Fax", c."Phone", c."PostalCode", c."Region", COALESCE(sum(o."OrderID"), 0)::bigint AS "Aggregate"
 FROM "Order Details" AS o
 INNER JOIN "Orders" AS o0 ON o."OrderID" = o0."OrderID"
 LEFT JOIN "Customers" AS c ON o0."CustomerID" = c."CustomerID"
@@ -2874,7 +2874,7 @@ GROUP BY o0."OrderID", o0."CustomerID", o0."EmployeeID", o0."OrderDate"
             """
 @p='80'
 
-SELECT COALESCE(sum(o0."OrderID"), 0)::int
+SELECT COALESCE(sum(o0."OrderID"), 0)::bigint
 FROM (
     SELECT o."OrderID", o."CustomerID"
     FROM "Orders" AS o
@@ -3204,7 +3204,7 @@ GROUP BY o."CustomerID"
 SELECT c."CustomerID", o0."Sum", o0."CustomerID"
 FROM "Customers" AS c
 LEFT JOIN LATERAL (
-    SELECT COALESCE(sum(o."OrderID"), 0)::int AS "Sum", o."CustomerID"
+    SELECT COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", o."CustomerID"
     FROM "Orders" AS o
     WHERE c."CustomerID" = o."CustomerID"
     GROUP BY o."CustomerID"
@@ -3222,7 +3222,7 @@ ORDER BY c."CustomerID" NULLS FIRST
 SELECT c."CustomerID", o0."Max", o0."Sum", o0."CustomerID"
 FROM "Customers" AS c
 LEFT JOIN LATERAL (
-    SELECT max(length(o."CustomerID")::int) AS "Max", COALESCE(sum(o."OrderID"), 0)::int AS "Sum", o."CustomerID"
+    SELECT max(length(o."CustomerID")::int) AS "Max", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", o."CustomerID"
     FROM "Orders" AS o
     WHERE c."CustomerID" = o."CustomerID"
     GROUP BY o."CustomerID"
@@ -3240,7 +3240,7 @@ ORDER BY c."CustomerID" NULLS FIRST
 SELECT c."CustomerID", o0."Max", o0."Sum", o0."CustomerID"
 FROM "Customers" AS c
 LEFT JOIN LATERAL (
-    SELECT max(length(o."CustomerID")::int) AS "Max", COALESCE(sum(o."OrderID"), 0)::int AS "Sum", o."CustomerID"
+    SELECT max(length(o."CustomerID")::int) AS "Max", COALESCE(sum(o."OrderID"), 0)::bigint AS "Sum", o."CustomerID"
     FROM "Orders" AS o
     GROUP BY o."CustomerID"
 ) AS o0 ON TRUE
@@ -3269,10 +3269,10 @@ GROUP BY o."OrderID"
 SELECT o."CustomerID" AS "Key", COALESCE(sum(CASE
     WHEN 2020 - date_part('year', o."OrderDate")::int <= 30 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "Sum1", COALESCE(sum(CASE
+END), 0)::bigint AS "Sum1", COALESCE(sum(CASE
     WHEN 2020 - date_part('year', o."OrderDate")::int > 30 AND 2020 - date_part('year', o."OrderDate")::int <= 60 THEN o."OrderID"
     ELSE 0
-END), 0)::int AS "Sum2"
+END), 0)::bigint AS "Sum2"
 FROM "Orders" AS o
 WHERE o."CustomerID" LIKE 'A%'
 GROUP BY o."CustomerID"
@@ -3311,7 +3311,7 @@ GROUP BY o."OrderID"
 
         AssertSql(
             """
-SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID" + length(o."CustomerID")::int), 0)::int AS "Sum"
+SELECT o."CustomerID" AS "Key", COALESCE(sum(o."OrderID" + length(o."CustomerID")::bigint), 0)::bigint AS "Sum"
 FROM "Orders" AS o
 GROUP BY o."CustomerID"
 """);
@@ -3528,7 +3528,7 @@ ORDER BY o1."CustomerID" NULLS FIRST
             """
 SELECT s.c, s."ProductID", c1."CustomerID", c1."City"
 FROM (
-    SELECT COALESCE(sum(o."ProductID" + o."OrderID" * 1000), 0)::int AS c, o."ProductID", min(o."OrderID" / 100) AS c0
+    SELECT COALESCE(sum(o."ProductID" + o."OrderID" * 1000), 0)::bigint AS c, o."ProductID", min(o."OrderID" / 100) AS c0
     FROM "Order Details" AS o
     INNER JOIN "Orders" AS o0 ON o."OrderID" = o0."OrderID"
     LEFT JOIN "Customers" AS c ON o0."CustomerID" = c."CustomerID"
@@ -3538,7 +3538,7 @@ FROM (
 LEFT JOIN LATERAL (
     SELECT c0."CustomerID", c0."City"
     FROM "Customers" AS c0
-    WHERE length(c0."CustomerID")::int < s.c0
+    WHERE length(c0."CustomerID")::bigint < s.c0
 ) AS c1 ON TRUE
 ORDER BY s."ProductID" NULLS FIRST, c1."CustomerID" NULLS FIRST
 """);
@@ -3553,7 +3553,7 @@ ORDER BY s."ProductID" NULLS FIRST, c1."CustomerID" NULLS FIRST
 SELECT c."CustomerID", s1."Sum", s1."Count", s1."Key"
 FROM "Customers" AS c
 LEFT JOIN LATERAL (
-    SELECT COALESCE(sum(s."OrderID"), 0)::int AS "Sum", (
+    SELECT COALESCE(sum(s."OrderID"), 0)::bigint AS "Sum", (
         SELECT count(*)::int
         FROM (
             SELECT o0."CustomerID", COALESCE(c1."City", '') || COALESCE(o0."CustomerID", '') AS "Key"

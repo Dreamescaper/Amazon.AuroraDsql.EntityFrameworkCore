@@ -58,7 +58,7 @@ ordering-sensitive tests fail (see follow-ups).
 | --- | ---: | ---: | ---: |
 | `NorthwindMiscellaneousQueryNpgsqlTest` | 962 | 1 | 0 |
 | `NorthwindWhereQueryNpgsqlTest` | 417 | 0 | 4 | `object[]`/`List<object>` `Contains` over a widened `int` key (below) |
-| `NorthwindGroupByQueryNpgsqlTest` | 377 | 5 | 132 | `TestSqlLoggerFactory.AssertBaseline` throws `FormatException`; SQL-snapshot mismatch (pre-existing, triage below) |
+| `NorthwindGroupByQueryNpgsqlTest` | 509 | 5 | 0 | baselines re-baselined to the widened-key `bigint` casts |
 | `NorthwindEFPropertyIncludeQueryNpgsqlTest` | 238 | 0 | 0 |
 | `NorthwindIncludeNoTrackingQueryNpgsqlTest` | 236 | 0 | 0 |
 | `NorthwindSplitIncludeNoTrackingQueryNpgsqlTest` | 236 | 0 | 0 |
@@ -68,13 +68,12 @@ ordering-sensitive tests fail (see follow-ups).
 | `NorthwindAsNoTrackingQueryNpgsqlTest` | 24 | 0 | 0 |
 | `NorthwindChangeTrackingQueryNpgsqlTest` | 17 | 0 | 0 |
 | `NorthwindCompiledQueryNpgsqlTest` | 32 | 0 | 0 |
-| `NorthwindSqlQueryNpgsqlTest` | 7 | 0 | 2 | same `AssertBaseline` path |
+| `NorthwindSqlQueryNpgsqlTest` | 9 | 0 | 0 | baselines re-baselined (widened-key join cast) |
 | `NorthwindQueryTaggingQueryNpgsqlTest` | 9 | 0 | 0 |
 | `NorthwindAsTrackingQueryNpgsqlTest` | 6 | 0 | 0 |
 
-Most ported Northwind suites pass; the exceptions are `Where` (4, widened-key `Contains`) and
-`GroupBy`/`SqlQuery` (SQL-snapshot assertions that fail while rendering — see the triage note). The
-previously failing 8 tests were inline **array parameters** (`Contains_with_local_*_array_closure`, `Query_with_array_parameter`, e.g.
+All ported Northwind suites pass except `Where` (4, widened-key `Contains`). The previously failing
+8 tests were inline **array parameters** (`Contains_with_local_*_array_closure`, `Query_with_array_parameter`, e.g.
 `op ANY/ALL (array) requires array on right side`, `operator does not exist: character = jsonb`):
 primitive collections were mapped to `jsonb` for parameters as well as columns. Fixed by applying
 the `jsonb` mapping only when mapping an `IProperty`; inline parameters stay native PostgreSQL
@@ -84,7 +83,7 @@ arrays (DSQL supports arrays at query runtime).
 provider-specific fixture fails with `Unable to determine the relationship ... UnidirectionalEntityOne.Collection`,
 i.e. EF 10.0.4 (efcore.pg v10.0.3) vs 10.0.12 model-configuration drift, unrelated to DSQL.
 
-### Triage: `NorthwindWhere` and `NorthwindGroupBy`/`NorthwindSqlQuery`
+### `NorthwindWhere` (4 failures) and SQL-snapshot re-baselining
 
 - `NorthwindWhere` — 4 failures, both `object[]`/`List<object>` `Contains` over an `int` identity key
   that the provider widens to `bigint`. EF's `object[]` collection translation trips over the value
@@ -92,12 +91,15 @@ i.e. EF 10.0.4 (efcore.pg v10.0.3) vs 10.0.12 model-configuration drift, unrelat
   `Expression of type 'System.Object' cannot be used for parameter of type 'System.Int32'`. Reproduced
   on the emulator and live; typed collections (`int[]`/`List<int>`) pass. Full write-up in
   [`docs/live-dsql-vs-emulator.md`](../../docs/live-dsql-vs-emulator.md).
-- `NorthwindGroupBy` (132) / `NorthwindSqlQuery` (2) — the tests fail while rendering the SQL-snapshot
-  assertion: `TestSqlLoggerFactory.AssertBaseline` throws
-  `FormatException: The input string '...NorthwindGroupByQueryNpgsqlTest.cs:line' was not in a correct
-  format` (it parses the test frame's source line number). Reproduces identically on `0.2.1` and
-  `0.3.0`, so it is **not** an emulator-version effect. Needs triage: either a real SQL diff these
-  tests hit, or a harness/PDB path artifact. Tracked in `docs/implementation-plan.md`.
+
+- `NorthwindGroupBy` (132) / `NorthwindSqlQuery` (2) were **not** a provider bug: they were
+  SQL-snapshot drifts from the `int`→`bigint` widening (`COALESCE(sum(o."OrderID"), 0)::int` →
+  `::bigint`, and the widened join cast), and the diff was invisible because
+  `TestSqlLoggerFactory.AssertBaseline` throws `FormatException` while reporting a mismatch when the
+  repository path contains a space (it splits the stack frame on spaces to find the test's source
+  line). Re-baselined with `EF_TEST_REWRITE_BASELINES=1` from a no-space copy of the harness; every
+  changed line was `int`→`bigint`, and the suites now pass (`GroupBy` 509/5/0, `SqlQuery` 9/0/0).
+  To re-baseline or see a diff, run the harness from a path without spaces — CI paths are fine.
 
 ## Provider bugs found and fixed (all on `main`)
 

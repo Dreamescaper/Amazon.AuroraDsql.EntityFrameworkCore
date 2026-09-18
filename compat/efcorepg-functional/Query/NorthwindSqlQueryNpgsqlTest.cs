@@ -47,7 +47,7 @@ SELECT o."OrderID", o."CustomerID", o."EmployeeID", o."OrderDate", s."Value"::in
 FROM "Orders" AS o
 INNER JOIN (
     SELECT "ProductID" AS "Value" FROM "Products"
-) AS s ON o."OrderID" = s."Value"::int
+) AS s ON o."OrderID" = s."Value"::bigint
 """);
     }
 
