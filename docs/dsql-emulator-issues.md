@@ -140,11 +140,12 @@ so these divergences are closed. Re-verified on `:0.3.0` (2026-09-18):
   `42804: attribute 1 of type "Orders" has wrong type | Table has type bigint, but query expects
   text.`
 - **Narrowed repro (probed live 2026-09-18):** not row values in general (DSQL accepts `ROW(...)`,
-  row comparison, and whole-row references). The failing shape needs all three of: a
-  `LEFT JOIN LATERAL ... ON TRUE`; the lateral target list referencing the **outer** relation; and a
-  lateral `WHERE` predicate referencing the outer relation. Same subquery under
-  `CROSS`/`INNER JOIN LATERAL`, without the outer projection, or without the outer predicate, passes.
-  Emulator `0.3.0` still passes the minimal repro (re-verified).
+  row comparison, and whole-row references). The failing shape is just a `LEFT JOIN LATERAL ... ON
+  TRUE` whose target list references the **outer** relation; no `WHERE` is required. The same
+  subquery under `CROSS`/`INNER JOIN LATERAL`, targeting a constant or an inner column, or with the
+  projection's type matching the inner relation's first attribute, passes. (An outer equality
+  predicate in the outer query happened to mask it in one probe — see the issue for the corrected
+  matrix.) Emulator `0.3.0` still passes the minimal repro (re-verified).
 - **Fix (ours):** none; the query shape is valid SQL that DSQL mis-plans. Full write-up on the issue.
 - **Upstream:** https://github.com/Dreamescaper/dsql-emulator/issues/4 (comment with the cut-down
   repro: https://github.com/Dreamescaper/dsql-emulator/issues/4#issuecomment-5727210760);

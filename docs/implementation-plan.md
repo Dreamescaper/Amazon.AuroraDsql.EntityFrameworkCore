@@ -266,9 +266,10 @@ conflict against a live/emulated conflict is verified in Phase 6.
             `EF_TEST_REWRITE_BASELINES=1` from a no-space harness copy; suites now pass
             (`GroupBy` 509/5/0, `SqlQuery` 9/0/0).
       - [x] Narrowed emulator issue #4 (composite/row values) to a specific query shape: a
-            `LEFT JOIN LATERAL` whose target list and `WHERE` both reference the outer relation. Cut
-            down to a self-contained two-table repro and posted to the issue; DSQL mis-plans it while
-            the emulator (and stock PostgreSQL) pass. DSQL side also raised on AWS Discord.
+            `LEFT JOIN LATERAL` whose target list references the outer relation (no `WHERE`
+            required). Cut down to a self-contained two-table repro and posted to the issue; DSQL
+            mis-plans it while the emulator (and stock PostgreSQL) pass. DSQL side also raised on
+            AWS Discord.
       - [x] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
             fail with `Expression of type 'System.Object' cannot be used for parameter of type
             'System.Int32'`. Reproduced on the emulator; caused by the `int` → `bigint` value
