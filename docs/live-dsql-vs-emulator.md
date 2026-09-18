@@ -219,13 +219,33 @@ strategy should cover migration/setup commands.
 types; the emulator's PostgreSQL does. Filed upstream as
 [dsql-emulator#4](https://github.com/Dreamescaper/dsql-emulator/issues/4).
 
-### `Skip`/`Take` collection projections pick different rows (6)
+### `Skip`/`Take` collection projections: undefined nested-collection order (6)
 
 `Projection_skip_collection_projection`, `Projection_take_collection_projection` and
-`Projection_skip_take_collection_projection` fail live with `Assert.Equal` count mismatches (e.g.
-expected 31, actual 39) while passing on the emulator. Likely a difference in `ORDER BY`/`LIMIT` row
-selection when the ordering is not fully deterministic; open — confirm whether it is ordering, data,
-or a translation difference.
+`Projection_skip_take_collection_projection` fail live with `Assert.Equal` on an element of the
+nested collection (e.g. expected `31`, actual `39` — those are `ProductID`s, not counts) while
+passing on the emulator.
+
+Investigated 2026-09-18; it is ordering, not translation. The generated SQL is:
+
+```sql
+SELECT o1."OrderID", o0."ProductID", o0."OrderID"
+FROM (
+    SELECT o."OrderID" FROM "Orders" AS o
+    WHERE o."OrderID" < 10300
+    ORDER BY o."OrderID" NULLS FIRST
+    OFFSET @p
+) AS o1
+LEFT JOIN "Order Details" AS o0 ON o1."OrderID" = o0."OrderID"
+ORDER BY o1."OrderID" NULLS FIRST, o0."OrderID" NULLS FIRST
+```
+
+The collection's `ORDER BY` ends at the **join key** `o0."OrderID"`, which is constant for every
+`ProductID` within one order, so the relative order of `ProductID`s is not determined by the SQL.
+The test asserts `AssertCollection(..., ordered: true)` against the in-memory order, which happens to
+match the single-node emulator's heap order but not DSQL's. PostgreSQL guarantees no order without a
+deterministic `ORDER BY`, so this is a test-portability assumption, not a provider or DSQL defect;
+the provider should not inject an ordering EF did not ask for. Excluded from the curated live job.
 
 ### `Where_contains_on_navigation` exhausts OCC retries (2)
 

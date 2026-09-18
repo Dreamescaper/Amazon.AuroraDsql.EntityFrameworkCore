@@ -259,7 +259,13 @@ conflict against a live/emulated conflict is verified in Phase 6.
             composite types ([dsql-emulator#4](https://github.com/Dreamescaper/dsql-emulator/issues/4)),
             `Skip`/`Take` collection projection row selection, and `Where_contains_on_navigation`
             exhausting OCC retries with read timeouts.
-      - [ ] Investigate `Skip`/`Take` collection projections live (ordering vs translation).
+      - [x] Investigate `Skip`/`Take` collection projections live: it is undefined nested-collection
+            order, not translation. The generated `ORDER BY` ends at the join key
+            (`o0."OrderID"`), which is constant within one order, so the `ProductID` order is not
+            determined; the test asserts `ordered: true`. PostgreSQL guarantees no order without a
+            deterministic `ORDER BY`, so this is test portability, not a provider/DSQL defect.
+            Documented in [`live-dsql-vs-emulator.md`](live-dsql-vs-emulator.md); the 3 tests (6
+            variants) are excluded from the curated live job.
       - [ ] Investigate `Where_contains_on_navigation` live (slow query → OCC retry/timeout).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
       - [x] Triage `NorthwindGroupByQueryNpgsqlTest` (132) / `NorthwindSqlQueryNpgsqlTest` (2):

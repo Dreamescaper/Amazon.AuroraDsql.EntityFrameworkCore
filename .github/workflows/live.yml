@@ -49,9 +49,15 @@ jobs:
 
       - name: Compatibility harness (live, curated subset)
         run: |
-          # Where_contains_on_navigation is excluded: it takes ~5 min per variant on DSQL
-          # (correlated EXISTS/IN over Customers x Orders) and read-timeouts, burning the token's
-          # role-session window. Tracked in docs/live-dsql-vs-emulator.md.
+          # Excluded from live runs:
+          #  - Where_contains_on_navigation: ~5 min per variant, read-timeouts.
+          #  - Projection_{skip,take,skip_take}_collection_projection: assert a nested-collection
+          #    order the SQL does not determine (ORDER BY ends at the constant join key).
+          # Both are documented in docs/live-dsql-vs-emulator.md.
+          EXCLUDE="FullyQualifiedName!~Where_contains_on_navigation"
+          EXCLUDE="$EXCLUDE&FullyQualifiedName!~Projection_skip_collection_projection"
+          EXCLUDE="$EXCLUDE&FullyQualifiedName!~Projection_take_collection_projection"
+          EXCLUDE="$EXCLUDE&FullyQualifiedName!~Projection_skip_take_collection_projection"
           for filter in \
             FindNpgsqlTest \
             NorthwindWhereQueryNpgsqlTest \
@@ -71,7 +77,7 @@ jobs:
             NorthwindAsTrackingQueryNpgsqlTest; do
             dotnet test compat/efcorepg-functional/DsqlEfcorePgFunctionalTests.csproj \
               --no-build -c Release \
-              --filter "FullyQualifiedName~.$filter&FullyQualifiedName!~Where_contains_on_navigation" \
+              --filter "FullyQualifiedName~.$filter&$EXCLUDE" \
               --logger "trx;LogFileName=live-$filter.trx" \
               --results-directory TestResults
           done
