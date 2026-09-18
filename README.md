@@ -49,6 +49,10 @@ Configuration: `options.UseDsql(dataSource, dsql => dsql.EnableIdentityColumns()
 `dsql.NullsFirst()` opts into `NULLS FIRST` so nulls sort first, as EF/SQL Server do by default
 (PostgreSQL, and therefore DSQL, sorts nulls last); it is off by default.
 
+Concurrency: DSQL has no `xid` column, so Npgsql `[Timestamp]`/`uint` row versions are rejected. Use
+an application-managed token (`Property(w => w.Version).IsConcurrencyToken()`); DSQL's own conflicts
+surface as `40001` and are retried. See [`docs/design.md`](docs/design.md) §7.
+
 > **Package id note:** this project currently uses the same id (`Amazon.AuroraDsql.EntityFrameworkCore`)
 > as the AWS Labs adapter. Both expose `UseDsql` and cannot be referenced together; the id must be
 > resolved before any NuGet release. See [`docs/comparison-aurora-dsql-orms.md`](docs/comparison-aurora-dsql-orms.md).

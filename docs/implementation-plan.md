@@ -225,7 +225,8 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [x] `DsqlDatabaseCreator` ignores the `sys` schema in `HasTables()`, so `EnsureCreated`
             works on DSQL (validated by the ported `FindNpgsqlTest` suite via the standard
             `EnsureCreated` path).
-      - [ ] Document/guide `xid` concurrency tokens → application-managed tokens.
+      - [x] Document/guide `xid` concurrency tokens → application-managed tokens
+            (`docs/design.md` §7 "Concurrency tokens").
       - [x] Widen `int` identity keys to `bigint` (DSQL requires bigint identity; the emulator
             accepts integer — [dsql-emulator#2](https://github.com/Dreamescaper/dsql-emulator/issues/2)).
       - [x] First live pass over the non-Northwind harness suites: provider 9/9, `Find` 411/411,

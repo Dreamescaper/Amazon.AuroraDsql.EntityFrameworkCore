@@ -251,6 +251,30 @@ process, and keeps each `MigrationCommand` intact.
   `ExecuteInTransactionAsync`-style helper that clears tracked state between attempts.
 - Disable auto-savepoints (`SupportsSavepoints => false`), since DSQL does not support them.
 
+### Concurrency tokens
+
+DSQL has no `xid` system column. Npgsql maps `uint`/`byte[]` `[Timestamp]` row versions to `xid`
+to emulate SQL Server rowversion, so those mappings cannot work here; the model validator rejects
+`xid` loudly. Use an application-managed concurrency token instead — a regular, supported column
+marked `IsConcurrencyToken()`:
+
+```csharp
+public class Widget
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public int Version { get; set; }        // incremented by the application on each change
+}
+
+modelBuilder.Entity<Widget>().Property(w => w.Version).IsConcurrencyToken();
+```
+
+EF appends the token to the `WHERE` of `UPDATE`/`DELETE`, so a stale value affects zero rows and
+raises `DbUpdateConcurrencyException`. At the database level DSQL already provides optimistic
+concurrency control on every transaction; a conflicting commit fails with `SQLSTATE 40001`, which
+`DsqlExecutionStrategy` retries. The two layers compose: use an application token for row-level
+conflict semantics, and rely on `40001` retries for transient serialization conflicts.
+
 ## 8. Connections and authentication
 
 Use `Amazon.AuroraDsql.Npgsql`'s `DsqlDataSource` for connections and IAM token auth. Its
@@ -290,8 +314,9 @@ Known DSQL limitations surfaced by porting the `efcore.pg` suite (see
 [`implementation-plan.md`](implementation-plan.md) Phase 6):
 
 - **`xid` concurrency tokens are unsupported.** Npgsql maps `uint`/`[Timestamp]` row versions to
-  the `xid` system column; DSQL has none. Use an application-managed concurrency token
-  (`IsConcurrencyToken()` on a supported column) instead. The model validator rejects `xid` loudly.
+  the `xid` system column; DSQL has none. The model validator rejects `xid` loudly. Use an
+  application-managed concurrency token instead — see
+  [§7 "Concurrency tokens"](#concurrency-tokens).
 - **`EnsureCreated`** works via `DsqlDatabaseCreator`: `Exists()` returns `true` (DSQL has a single
   `postgres` database) and `HasTables()` uses `information_schema` and ignores the `sys` schema,
   because DSQL does not expose `pg_catalog`. Migrations remain the recommended path.
