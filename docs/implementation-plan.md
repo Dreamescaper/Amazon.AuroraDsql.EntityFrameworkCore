@@ -250,8 +250,12 @@ conflict against a live/emulated conflict is verified in Phase 6.
       - [ ] Investigate `Skip`/`Take` collection projections live (ordering vs translation).
       - [ ] Investigate `Where_contains_on_navigation` live (slow query → OCC retry/timeout).
       - [ ] Investigate transient `40001` during harness store reset on a live cluster.
-      - [ ] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
-            fail with an EF expression-type error; investigate or document as unsupported.
+      - [x] `List<object>`/`object[]` `Contains` over a widened int key: 4 `NorthwindWhere` tests
+            fail with `Expression of type 'System.Object' cannot be used for parameter of type
+            'System.Int32'`. Reproduced on the emulator; caused by the `int` → `bigint` value
+            converter interacting with EF's `object[]` collection translation, not by DSQL.
+            Documented in `docs/live-dsql-vs-emulator.md`; typed collections (`int[]`/`List<int>`)
+            are the workaround and pass.
       - [x] Exposed null ordering as `DsqlDbContextOptionsBuilder.NullsFirst()` (the equivalent of
             efcore.pg's internal `ReverseNullOrdering`); off by default, on in the compatibility
             harness. Without it ~9 ordering-sensitive spec tests fail.
